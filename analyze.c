@@ -85,22 +85,28 @@ static void insertNode( TreeNode * t) //alterar essa
             // if(!strcmp(t->child[0]->attr.name, "main")) {
             //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
             // }
-            st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));}
-          else
-          /* already in table, so ignore location, 
+            // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
+            st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));
+          } else {
+              /* already in table, so ignore location, 
              add line number of use only */ 
+            //  pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
             st_insert(t->child[0]->attr.name,t->child[0]->lineno,0, "" ,"", "");
+          }
         break;
 
       case CallK:
         if (st_lookup(t->attr.name) == -1){
           /* not yet in table, so treat as new definition */
             Scope = t->attr.name;
-            st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");}
-          else
-          /* already in table, so ignore location, 
-             add line number of use only */ 
+            // pc("\n\n%s (3) CHAMA INSERT\n\n", t->attr.name);
+            st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");
+          } else {
+            /* already in table, so ignore location, 
+             add line number of use only */
+            //  pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
             st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+          }
         break;
 
       default:
@@ -110,13 +116,16 @@ static void insertNode( TreeNode * t) //alterar essa
     case ExpK:
       switch (t->kind.exp)
       { case IdK:
-        if (st_lookup(t->attr.name) == -1)
+        if (st_lookup(t->attr.name) == -1) {
           /* not yet in table, so treat as new definition */
+          // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
             st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
-          else
-          /* already in table, so ignore location, 
+        } else {
+            /* already in table, so ignore location, 
              add line number of use only */ 
+            //  pc("\n\n%s (6) CHAMA INSERT\n\n", t->attr.name);
             st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+        }
           break;
         case ConstK: break; //o valor da variavel nao entra na tabela
         case OpK: break; //operador nao entra na tabela
@@ -128,28 +137,6 @@ static void insertNode( TreeNode * t) //alterar essa
       break;
   }
 }
-
-// static void insertBuiltinFunctions(void)
-// { 
-//   // TreeNode *input = newStmtNode(FunDecK);
-//   // input->sibling = *syntaxTree;
-//   // *syntaxTree = input;
-//   // input->lineno = 0;
-//   // input->attr.name = malloc(sizeof(char) * (strlen("input") + 1));
-//   // strcpy(input->attr.name, "input");
-//   // input->type = Integer;
-//   // st_insert(t->attr.name,t->lineno,0, "" ,"", "");
-//   st_insert("input", 0, 0, "" ,"fun", "int");
-//   // TreeNode *output = newStmtNode(FunDecK);
-//   // output->sibling = *syntaxTree;
-//   // *syntaxTree = output;
-//   // output->lineno = 0;
-//   // output->attr.name = malloc(sizeof(char) * (strlen("output") + 1));
-//   // strcpy(output->attr.name, "output");
-//   // output->type = Void;
-//   // st_insert(t->attr.name,t->lineno,0, "" ,"", "");
-//   st_insert("output", 0, 0, "" ,"fun", "void");
-// }
 
 // static char * currentScope;
 

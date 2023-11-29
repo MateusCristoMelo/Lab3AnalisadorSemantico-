@@ -85,8 +85,9 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
     hashTable[h] = l; }
   else /* found in table, so just add line number */
   { LineList t = l->lines;
+    if(t->lineno == lineno) return;
     while (t->next != NULL) {
-      if(t->lineno == lineno) return;
+      if(t->next->lineno == lineno) return;
       t = t->next;
       }
     t->next = (LineList) malloc(sizeof(struct LineListRec));
