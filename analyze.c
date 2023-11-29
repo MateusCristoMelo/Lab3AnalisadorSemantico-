@@ -16,6 +16,9 @@ extern struct Stack var_or_array_stack;
 /* counter for variable memory locations */
 static int location = 0;
 
+// Variável global para rastrear se a função main foi encontrada
+static int hasMain = 0;
+
 /* Procedure traverse is a generic recursive 
  * syntax tree traversal routine:
  * it applies preProc in preorder and postProc 
@@ -193,7 +196,8 @@ static void checkNode(TreeNode * t) //alterar essa
           break;
         case ConstK:
         case IdK:
-          t->type = Integer;
+          if (var_type != INT)
+            typeError(t,"variable declared void");
           break;
         default:
           break;
@@ -219,6 +223,12 @@ static void checkNode(TreeNode * t) //alterar essa
         case CallK:
         case VarDecK:
         case FunDecK:
+          if (t->child[0]->type != Token2Char(t->attr.op))
+            typeError(t->child[0],"invalid use of void expression");
+          if (strcmp(t->attr.name, "main") == 0) {
+              hasMain = 1;  // Marcar que a função main foi encontrada
+          }
+          break;
         default:
           break;
       }
@@ -229,11 +239,13 @@ static void checkNode(TreeNode * t) //alterar essa
   }*/
 }
 
+/*
+void checkMain(TreeNode * syntaxTree)
+{
+    traverse(syntaxTree, checkNode, nullProc);
+
+    if (!hasMain) {
+        typeError(t,"undefined reference to 'main'");
 
 
-/* Procedure typeCheck performs type checking 
- * by a postorder syntax tree traversal
- */
-void typeCheck(TreeNode * syntaxTree)
-{ traverse(syntaxTree,nullProc,checkNode);
-}
+*/
