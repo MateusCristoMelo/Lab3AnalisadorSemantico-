@@ -119,6 +119,15 @@ static void insertNode( TreeNode * t) //alterar essa
         if (st_lookup(t->attr.name) == -1) {
           /* not yet in table, so treat as new definition */
           // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
+            if (isEmpty(&var_or_array_stack)) {
+                printf("Erro: a pilha está vazia e não é possível retirar elementos.\n");
+            } else {
+                push(&var_or_array_stack, var_or_array_stack.items[0]);
+                for(int i = 0; i < ((var_or_array_stack.top)-1); ++i)
+                {
+                  var_or_array_stack.items[i] = var_or_array_stack.items[(i+1)];
+                }
+            }
             st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
         } else {
             /* already in table, so ignore location, 
@@ -148,6 +157,10 @@ void buildSymtab(TreeNode * syntaxTree)
   // insertBuiltinFunctions();
   st_insert("input", 0, 0, "" ,"fun", "int");
   st_insert("output", 0, 0, "" ,"fun", "void");
+  // pc("\n\nSTACK\n\n");
+  // while (!isEmpty(&var_or_array_stack)) {
+  //   pc("\n\n%-7s\n\n",pop(&var_or_array_stack));
+  // }
   /* Traversing the sintax tree */
   traverse(syntaxTree,insertNode,nullProc);
   if (TraceAnalyze)

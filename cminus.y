@@ -125,9 +125,9 @@ param_lista:
 
 param: 
       tipo_especificador ID {$$ = newStmtNode(VarDecK);
-			    $$->attr.op = (TokenType)(intptr_t)$1;
-			    $$->child[0] = newExpNode(IdK);
-                        push(&var_or_array_stack, "var"); 
+			                $$->attr.op = (TokenType)(intptr_t)$1;
+			                $$->child[0] = newExpNode(IdK);
+                      push(&var_or_array_stack, "var");
                       char *poppedStr = (char *)pop(&name_stack);
                       $$->child[0]->attr.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
@@ -135,8 +135,8 @@ param:
                       
 			   }
 |     tipo_especificador ID LBRACKET RBRACKET {$$ = newStmtNode(VarDecK);
-			    $$->attr.op = (TokenType)(intptr_t)$1;
-			    $$->child[0] = newExpNode(IdK);
+			                $$->attr.op = (TokenType)(intptr_t)$1;
+			                $$->child[0] = newExpNode(IdK);
                       push(&var_or_array_stack, "array"); 
                       char *poppedStr = (char *)pop(&name_stack);
                       $$->child[0]->attr.name = copyString(poppedStr);
