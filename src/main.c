@@ -40,7 +40,7 @@ char **linhas = NULL;
 struct Stack name_stack;
 struct Stack number_stack; 
 struct Stack var_or_array_stack;
- 
+struct Stack lineno_stack; 
 
 /* allocate and set tracing flags */
 int EchoSource = FALSE;
@@ -64,6 +64,7 @@ int main( int argc, char * argv[] )
   initStack(&name_stack);
   initStack(&number_stack);
   initStack(&var_or_array_stack);
+  initStack(&lineno_stack);
 
     char pgm[120]; /* source code file name */
     if ((argc < 2) || (argc > 3))

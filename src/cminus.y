@@ -11,6 +11,8 @@
 #include "util.h"
 #include "scan.h"
 #include "parse.h"
+#include "stdlib.h"
+#include "stdio.h"
 
 #define YYSTYPE TreeNode *
 static char * savedName; /* for use in assignments */
@@ -21,6 +23,7 @@ int yyerror(char *s);
 extern struct Stack name_stack;
 extern struct Stack number_stack;
 extern struct Stack var_or_array_stack;
+extern struct Stack lineno_stack;
 extern char *id_name;
 
 
@@ -64,6 +67,8 @@ var_declaracao:
         
         char *poppedStr = (char *)pop(&name_stack);
         $$->child[0]->attr.name = copyString(poppedStr);
+        char *poppedLin = (char *)pop(&lineno_stack);
+        $$->child[0]->lineno = atoi(copyString(poppedLin));
         push(&var_or_array_stack, "var"); 
         
     }
@@ -74,6 +79,8 @@ var_declaracao:
         
         char *poppedStr = (char *)pop(&name_stack);
         $$->child[0]->attr.name = copyString(poppedStr);
+        char *poppedLin = (char *)pop(&lineno_stack);
+        $$->child[0]->lineno = atoi(copyString(poppedLin));
         push(&var_or_array_stack, "array"); 
         $$->child[0]->child[0] = newExpNode(ConstK);
         
@@ -93,7 +100,8 @@ fun_declaracao:
                                                                           $$->child[0] = newExpNode(IdK);
                                                                           char *poppedStr = (char *)pop(&name_stack);
                                                                           $$->child[0]->attr.name = copyString(poppedStr);  
-                                                                      
+                                                                          char *poppedLin = (char *)pop(&lineno_stack);
+                                                                          $$->child[0]->lineno = atoi(copyString(poppedLin));
 
                                                                           $$->child[1] = $4;
                                                                           $$->child[2] = $6;
@@ -117,19 +125,23 @@ param_lista:
 
 param: 
       tipo_especificador ID {$$ = newStmtNode(VarDecK);
-			    $$->attr.op = (TokenType)(intptr_t)$1;
-			    $$->child[0] = newExpNode(IdK);
-                        push(&var_or_array_stack, "var"); 
+			                $$->attr.op = (TokenType)(intptr_t)$1;
+			                $$->child[0] = newExpNode(IdK);
+                      push(&var_or_array_stack, "var");
                       char *poppedStr = (char *)pop(&name_stack);
-                      $$->child[0]->attr.name = copyString(poppedStr);  
+                      $$->child[0]->attr.name = copyString(poppedStr);
+                      char *poppedLin = (char *)pop(&lineno_stack);
+                      $$->child[0]->lineno = atoi(copyString(poppedLin));
                       
 			   }
 |     tipo_especificador ID LBRACKET RBRACKET {$$ = newStmtNode(VarDecK);
-			    $$->attr.op = (TokenType)(intptr_t)$1;
-			    $$->child[0] = newExpNode(IdK);
+			                $$->attr.op = (TokenType)(intptr_t)$1;
+			                $$->child[0] = newExpNode(IdK);
                       push(&var_or_array_stack, "array"); 
                       char *poppedStr = (char *)pop(&name_stack);
-                      $$->child[0]->attr.name = copyString(poppedStr);  
+                      $$->child[0]->attr.name = copyString(poppedStr);
+                      char *poppedLin = (char *)pop(&lineno_stack);
+                      $$->child[0]->lineno = atoi(copyString(poppedLin));
                       
                        }
 ;
@@ -210,15 +222,19 @@ expressao :
 
 var : 
       ID {$$ = newExpNode(IdK);
-		char *poppedStr = (char *)pop(&name_stack);
-            $$->attr.name = copyString(poppedStr);  
+		         char *poppedStr = (char *)pop(&name_stack);
+             $$->attr.name = copyString(poppedStr);
+             char *poppedLin = (char *)pop(&lineno_stack);
+             $$->lineno = atoi(copyString(poppedLin)); 
 
             
             	    }
 |     ID LBRACKET expressao RBRACKET { $$ = newExpNode(IdK);
 
                 char *poppedStr = (char *)pop(&name_stack);
-            $$->attr.name = copyString(poppedStr);  
+                $$->attr.name = copyString(poppedStr);
+                char *poppedLin = (char *)pop(&lineno_stack);
+                $$->lineno = atoi(copyString(poppedLin));
             
 		      $$->child[0] = $3;}
 ;
@@ -226,8 +242,8 @@ var :
 simples_expressao :
                     soma_expressao relacional soma_expressao {$$ = newExpNode(OpK);
                       $$->child[0] = $1;
-			    $$->attr.op = (TokenType)(intptr_t)$2;
-			    $$->child[1] = $3;}
+			                $$->attr.op = (TokenType)(intptr_t)$2;
+			                $$->child[1] = $3;}
 |                   soma_expressao {$$ = $1; }
 ;
 
@@ -280,6 +296,8 @@ ativacao :
             char *poppedStr = (char *)pop(&name_stack);
             $$->child[0]->attr.name = NULL;
             $$->attr.name = copyString(poppedStr);
+            char *poppedLin = (char *)pop(&lineno_stack);
+            $$->lineno = atoi(copyString(poppedLin));
             $$->child[1] = $3;
             
           }
@@ -318,10 +336,17 @@ int yyerror(char * message)
   TINY scanner
  */
 static int yylex(void)
-{ return getToken(); }
+{ TokenType token = getToken();
+  // if (token == ID)
+  // { 
+  //   int digits = snprintf(NULL, 0, "%d", lineno);
+  //   char *str = (char *) malloc(digits + 1);
+  //   snprintf(str, digits + 1, "%d", lineno);
+  //   push(&lineno_stack, str); 
+  // }
+  return token; }
 
 TreeNode * parse(void)
 { yyparse();
   return savedTree;
 }
-

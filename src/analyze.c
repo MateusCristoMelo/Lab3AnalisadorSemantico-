@@ -21,11 +21,10 @@ static int location = 0;
  * it applies preProc in preorder and postProc 
  * in postorder to tree pointed to by t
  */
-static void traverse( TreeNode * t,
-               void (* preProc) (TreeNode *),
-               void (* postProc) (TreeNode *) )
+static void traverse( TreeNode * t, void (* preProc) (TreeNode *), void (* postProc) (TreeNode *) )
 { if (t != NULL)
-  { preProc(t);
+  { 
+    preProc(t);
     { int i;
       for (i=0; i < MAXCHILDREN; i++)
         traverse(t->child[i],preProc,postProc);
@@ -70,55 +69,85 @@ char *var_type;
  */
 static void insertNode( TreeNode * t) //alterar essa
 {
-
+  // pc("\n\nINSERT NODE\n\n");
   switch (t->nodekind)
   { case StmtK:
       switch (t->kind.stmt)
       { 
-      case VarDecK: 
-        var_type = Token2Char(t->attr.op); break; //tratado em idk
-      case FunDecK:
-        if (st_lookup(t->child[0]->attr.name) == -1){
-          /* not yet in table, so treat as new definition */
-            Scope = t->child[0]->attr.name;
-            st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));}
-          else
-          /* already in table, so ignore location, 
-             add line number of use only */ 
-            st_insert(t->child[0]->attr.name,t->child[0]->lineno,0, "" ,"", "");
-        break;
+        case VarDecK: 
+          pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          var_type = Token2Char(t->attr.op); break; //tratado em idk
 
-      case CallK:
-        if (st_lookup(t->attr.name) == -1){
-          /* not yet in table, so treat as new definition */
-            Scope = t->attr.name;
-            st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");}
-          else
-          /* already in table, so ignore location, 
-             add line number of use only */ 
-            st_insert(t->attr.name,t->lineno,0, "" ,"", "");
-        break;
+        case FunDecK:
+          pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          if (st_lookup(t->child[0]->attr.name) == -1){
+            /* not yet in table, so treat as new definition */
+              Scope = t->child[0]->attr.name;
+              // if(!strcmp(t->child[0]->attr.name, "main")) {
+              //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
+              // }
+              // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
+              st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));
+            } else {
+                /* already in table, so ignore location, 
+              add line number of use only */ 
+              //  pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
+              st_insert(t->child[0]->attr.name,t->child[0]->lineno,0, "" ,"", "");
+            }
+          break;
 
+        case CallK:
+          pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          if (st_lookup(t->attr.name) == -1){
+            /* not yet in table, so treat as new definition */
+              Scope = t->attr.name;
+              // pc("\n\n%s (3) CHAMA INSERT\n\n", t->attr.name);
+              st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");
+            } else {
+              /* already in table, so ignore location, 
+              add line number of use only */
+              //  pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
+              st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+            }
+          break;
 
-
-
-      default:
-        break;
+        default:
+          break;
       }
       break;
     case ExpK:
+      pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
       switch (t->kind.exp)
-      { case IdK:
-        if (st_lookup(t->attr.name) == -1)
-          /* not yet in table, so treat as new definition */
-            st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
-          else
-          /* already in table, so ignore location, 
-             add line number of use only */ 
-            st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+      { 
+        case IdK:
+        // // st_lookup(t->attr.name);
+        // if (st_lookup(t->attr.name) == -1) {
+        //   /* not yet in table, so treat as new definition */
+        //   // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
+        //     if (isEmpty(&var_or_array_stack)) {
+        //         printf("Erro: a pilha está vazia e não é possível retirar elementos.\n");
+        //     } else {
+        //         push(&var_or_array_stack, var_or_array_stack.items[0]);
+        //         for(int i = 0; i < ((var_or_array_stack.top)-1); ++i)
+        //         {
+        //           var_or_array_stack.items[i] = var_or_array_stack.items[(i+1)];
+        //         }
+        //     }
+        //     st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
+        // } else {
+        //     /* already in table, so ignore location, 
+        //      add line number of use only */ 
+        //     //  pc("\n\n%s (6) CHAMA INSERT\n\n", t->attr.name);
+        //     st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+        // }
           break;
-        case ConstK: break; //o valor da variavel nao entra na tabela
-        case OpK: break; //operador nao entra na tabela
+
+        case ConstK: 
+          break; //o valor da variavel nao entra na tabela
+
+        case OpK: 
+          break; //operador nao entra na tabela
+
         default:
           break;
       }
@@ -128,15 +157,20 @@ static void insertNode( TreeNode * t) //alterar essa
   }
 }
 
-static char * currentScope;
+// static char * currentScope;
 
 /* Function buildSymtab constructs the symbol 
  * table by preorder traversal of the syntax tree
  */
 void buildSymtab(TreeNode * syntaxTree)
 { 
-
-
+  // insertBuiltinFunctions();
+  st_insert("input", 0, 0, "" ,"fun", "int");
+  st_insert("output", 0, 0, "" ,"fun", "void");
+  // pc("\n\nSTACK\n\n");
+  // while (!isEmpty(&var_or_array_stack)) {
+  //   pc("\n\n%-7s\n\n",pop(&var_or_array_stack));
+  // }
   /* Traversing the sintax tree */
   traverse(syntaxTree,insertNode,nullProc);
   if (TraceAnalyze)

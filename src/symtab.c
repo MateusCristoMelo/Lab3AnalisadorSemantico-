@@ -26,6 +26,8 @@ static int hash ( char * key )
   int i = 0;
   while (key[i] != '\0')
   { temp = ((temp << SHIFT) + key[i]) % SIZE;
+    pc("\nKEY i = %c", key[i]);
+    pc("\nADD because 1 digit\n");
     ++i;
   }
   return temp;
@@ -65,7 +67,10 @@ static BucketList hashTable[SIZE];
  * first time, otherwise ignored
  */
 void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, char * data_type)
-{ int h = hash(name);
+{ 
+  pc("\n\nHASH OF INSERT -----------------------------------------------------------\n\n");
+  int h = hash(name);
+  pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
   while ((l != NULL) && (strcmp(name,l->name) != 0))
     l = l->next;
@@ -76,17 +81,18 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
     l->lines->lineno = lineno;
     l->memloc = loc;
 
-    l->data_type=data_type;
     l->scope=scope;
     l->id_type=id_type;
+    l->data_type=data_type;
 
     l->lines->next = NULL;
     l->next = hashTable[h];
     hashTable[h] = l; }
   else /* found in table, so just add line number */
   { LineList t = l->lines;
+    if(t->lineno == lineno) return;
     while (t->next != NULL) {
-      if(t->lineno == lineno) return;
+      if(t->next->lineno == lineno) return;
       t = t->next;
       }
     t->next = (LineList) malloc(sizeof(struct LineListRec));
@@ -99,7 +105,11 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
  * location of a variable or -1 if not found
  */
 int st_lookup ( char * name )
-{ int h = hash(name);
+{ 
+  pc("\n\nSTRING: %s --------------------------------------------------------------\n\n", name);
+  if (name == NULL) return -1;
+  int h = hash(name);
+  pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
   while ((l != NULL) && (strcmp(name,l->name) != 0))
     l = l->next;
@@ -127,7 +137,11 @@ void printSymTab()//tem q alterar
 
         //pc("%-8d  ",l->memloc);
         while (t != NULL)
-        { pc("%2d ",t->lineno);
+        {
+          if(t->lineno != 0)
+          {
+            pc("%2d ",t->lineno);
+          }
           t = t->next;
         }
         pc("\n");
