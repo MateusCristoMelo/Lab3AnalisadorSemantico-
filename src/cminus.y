@@ -110,8 +110,9 @@ fun_declaracao:
                                                                           $$->child[0]->lineno = atoi(copyString(poppedLin));
                                                                           free(poppedLin);
                                                                           
-                                                                          $$->child[1] = $4;
-                                                                          $$->child[2] = $6;
+                                                                          $$->child[0]->child[0] = $4;
+
+                                                                          $$->child[0]->child[1] = $6;
                                                                           }
 ;
 
@@ -311,7 +312,7 @@ ativacao :
             char *poppedLin = (char *)pop(&lineno_stack);
             $$->lineno = atoi(copyString(poppedLin));
             free(poppedLin);
-            //push(&var_or_array_stack, "var"); 
+            enqueue(&var_or_array_stack, "var"); 
             $$->child[1] = $3;
             
           }
