@@ -13,6 +13,7 @@ char tokenString[MAXTOKENLEN+1];
 static int yylex(void);
 extern struct Stack name_stack;
 extern struct Stack number_stack;
+extern struct Stack lineno_stack;
 char *id_name;
 char *number_value;
 %}
@@ -58,6 +59,10 @@ whitespace  [ \t]+
                  return NUM;}
 {identifier}    {id_name = copyString(yytext);
                  push(&name_stack, id_name);
+                 int digits = snprintf(NULL, 0, "%d", lineno);
+    			       char *str = (char *) malloc(digits + 1);
+    			       snprintf(str, digits + 1, "%d", lineno);
+    			       push(&lineno_stack, str); 
                  return ID;}
 {newline}       {
                 if(linhas[lineno] == NULL)

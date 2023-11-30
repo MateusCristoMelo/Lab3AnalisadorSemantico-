@@ -75,11 +75,11 @@ static void insertNode( TreeNode * t) //alterar essa
       switch (t->kind.stmt)
       { 
         case VarDecK: 
-          pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          // pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
           var_type = Token2Char(t->attr.op); break; //tratado em idk
 
         case FunDecK:
-          pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          // pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
           if (st_lookup(t->child[0]->attr.name) == -1){
             /* not yet in table, so treat as new definition */
               Scope = t->child[0]->attr.name;
@@ -97,7 +97,7 @@ static void insertNode( TreeNode * t) //alterar essa
           break;
 
         case CallK:
-          pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          // pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
           if (st_lookup(t->attr.name) == -1){
             /* not yet in table, so treat as new definition */
               Scope = t->attr.name;
@@ -116,30 +116,30 @@ static void insertNode( TreeNode * t) //alterar essa
       }
       break;
     case ExpK:
-      pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+      // pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
       switch (t->kind.exp)
       { 
         case IdK:
-        // // st_lookup(t->attr.name);
-        // if (st_lookup(t->attr.name) == -1) {
-        //   /* not yet in table, so treat as new definition */
-        //   // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
-        //     if (isEmpty(&var_or_array_stack)) {
-        //         printf("Erro: a pilha está vazia e não é possível retirar elementos.\n");
-        //     } else {
-        //         push(&var_or_array_stack, var_or_array_stack.items[0]);
-        //         for(int i = 0; i < ((var_or_array_stack.top)-1); ++i)
-        //         {
-        //           var_or_array_stack.items[i] = var_or_array_stack.items[(i+1)];
-        //         }
-        //     }
-        //     st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
-        // } else {
-        //     /* already in table, so ignore location, 
-        //      add line number of use only */ 
-        //     //  pc("\n\n%s (6) CHAMA INSERT\n\n", t->attr.name);
-        //     st_insert(t->attr.name,t->lineno,0, "" ,"", "");
-        // }
+        // st_lookup(t->attr.name);
+        if (st_lookup(t->attr.name) == -1) {
+          /* not yet in table, so treat as new definition */
+          // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
+            if (isEmpty(&var_or_array_stack)) {
+                printf("Erro: a pilha está vazia e não é possível retirar elementos.\n");
+            } else {
+                push(&var_or_array_stack, var_or_array_stack.items[0]);
+                for(int i = 0; i < ((var_or_array_stack.top)-1); ++i)
+                {
+                  var_or_array_stack.items[i] = var_or_array_stack.items[(i+1)];
+                }
+            }
+            st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
+        } else {
+            /* already in table, so ignore location, 
+             add line number of use only */ 
+            //  pc("\n\n%s (6) CHAMA INSERT\n\n", t->attr.name);
+            st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+        }
           break;
 
         case ConstK: 

@@ -69,6 +69,8 @@ var_declaracao:
         $$->child[0]->attr.name = copyString(poppedStr);
         char *poppedLin = (char *)pop(&lineno_stack);
         $$->child[0]->lineno = atoi(copyString(poppedLin));
+        free(poppedLin);
+
         push(&var_or_array_stack, "var"); 
         
     }
@@ -81,11 +83,14 @@ var_declaracao:
         $$->child[0]->attr.name = copyString(poppedStr);
         char *poppedLin = (char *)pop(&lineno_stack);
         $$->child[0]->lineno = atoi(copyString(poppedLin));
+        free(poppedLin);
+
         push(&var_or_array_stack, "array"); 
         $$->child[0]->child[0] = newExpNode(ConstK);
         
         char *poppedInt = (char *)pop(&number_stack);
         $$->child[0]->child[0]->attr.val = atoi(poppedInt);
+        free(poppedInt);
     }
 ;
 
@@ -102,6 +107,7 @@ fun_declaracao:
                                                                           $$->child[0]->attr.name = copyString(poppedStr);  
                                                                           char *poppedLin = (char *)pop(&lineno_stack);
                                                                           $$->child[0]->lineno = atoi(copyString(poppedLin));
+                                                                          free(poppedLin);
 
                                                                           $$->child[1] = $4;
                                                                           $$->child[2] = $6;
@@ -132,6 +138,7 @@ param:
                       $$->child[0]->attr.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
                       $$->child[0]->lineno = atoi(copyString(poppedLin));
+                      free(poppedLin);
                       
 			   }
 |     tipo_especificador ID LBRACKET RBRACKET {$$ = newStmtNode(VarDecK);
@@ -142,6 +149,7 @@ param:
                       $$->child[0]->attr.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
                       $$->child[0]->lineno = atoi(copyString(poppedLin));
+                      free(poppedLin);
                       
                        }
 ;
@@ -226,6 +234,7 @@ var :
              $$->attr.name = copyString(poppedStr);
              char *poppedLin = (char *)pop(&lineno_stack);
              $$->lineno = atoi(copyString(poppedLin)); 
+             free(poppedLin);
 
             
             	    }
@@ -235,6 +244,7 @@ var :
                 $$->attr.name = copyString(poppedStr);
                 char *poppedLin = (char *)pop(&lineno_stack);
                 $$->lineno = atoi(copyString(poppedLin));
+                free(poppedLin);
             
 		      $$->child[0] = $3;}
 ;
@@ -298,6 +308,8 @@ ativacao :
             $$->attr.name = copyString(poppedStr);
             char *poppedLin = (char *)pop(&lineno_stack);
             $$->lineno = atoi(copyString(poppedLin));
+            free(poppedLin);
+            
             $$->child[1] = $3;
             
           }
