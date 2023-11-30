@@ -37,10 +37,6 @@ static void traverse( TreeNode * t, void (* preProc) (TreeNode *), void (* postP
   }
 }
 
-// if (!hasMain) {
-//           typeError(t,"undefined reference to 'main'");
-//   }
-
 /* nullProc is a do-nothing procedure to 
  * generate preorder-only or postorder-only
  * traversals from traverse
@@ -56,25 +52,6 @@ char* Token2Char(TokenType token)
   { 
     case VOID: return "void";
     case INT: return "int"; 
-    case ASSIGN: return "=";
-    case EQ: return "==";
-    case LT: return "<";
-    case LE: return "<=";
-    case GT: return ">";
-    case GE: return ">=";
-    case NE: return "!=";
-    case LPAREN: return "(";
-    case RPAREN: return ")";
-    case SEMI: return ";";
-    case PLUS: return "+";
-    case MINUS: return "-";
-    case TIMES: return "*";
-    case OVER: return "/";
-    case COMMA: return ",";
-    case LBRACE: return "{";
-    case RBRACE: return "}";
-    case LBRACKET: return "[";
-    case RBRACKET: return "]";
     default: /* should never happen */ pc("Unknown token: %d\n",token);
   }
 }
@@ -236,24 +213,24 @@ static void checkNode(TreeNode * t) //alterar essa
             typeError(t->child[0],"if test is not Boolean");
           break;
         case AssignK:
-          // if (t->child[0]->type != Integer)
-          //   typeError(t->child[0],"assignment of non-integer value");
+          if (t->child[0]->type != Integer)
+            typeError(t->child[0],"assignment of non-integer value");
           break;
         case WhileK:
           if (t->child[0]->type == Integer)
             typeError(t->child[0],"repeat test is not Boolean");
           break;
         case ReturnK:
-          //if (t->child[1]->type == Integer)
+          // if (t->child[1]->type == Integer)
           //  typeError(t->child[1],"repeat test is not Boolean");
         case CallK:
         case VarDecK:
         case FunDecK:
-          if (t->child[0]->type != Void)
-            typeError(t->child[0],"invalid use of void expression");
-          if (strcmp(t->attr.name, "main") == 0) {
-              hasMain = 1;  // Marcar que a função main foi encontrada
-          }
+          // if (t->child[0]->type != Void)
+          //   typeError(t->child[0],"invalid use of void expression");
+          // if (strcmp(t->attr.name, "main") == 0) {
+          //     hasMain = 1;  // Marcar que a função main foi encontrada
+          // }
           break;
         default:
           break;
@@ -265,12 +242,12 @@ static void checkNode(TreeNode * t) //alterar essa
   }
 }
 
+
 /* Procedure typeCheck performs type checking 
  * by a postorder syntax tree traversal
  */
 void typeCheck(TreeNode * syntaxTree)
-{ 
-  traverse(syntaxTree,nullProc,checkNode);
+{ traverse(syntaxTree,nullProc,checkNode);
   if (!hasMain) {
           typeError(syntaxTree,"undefined reference to 'main'");
   }
