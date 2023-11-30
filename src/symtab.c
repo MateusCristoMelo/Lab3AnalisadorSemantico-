@@ -20,12 +20,28 @@
    in hash function  */
 #define SHIFT 4
 
+
+int stringsum(char * comp_string)
+{ int i = 0;
+int sum = 0;
+  if(comp_string == NULL)
+    return 0;
+    
+    while (comp_string[i] != '\0') {
+        sum += comp_string[i] - '0';  // Convertendo o caractere para valor inteiro
+        i++;
+    }
+    
+  return sum;
+}
+
 /* the hash function */
-static int hash ( char * key )
+static int hash ( char * key , char * scope)
 { int temp = 0;
   int i = 0;
+  int s = stringsum(scope);
   while (key[i] != '\0')
-  { temp = ((temp << SHIFT) + key[i]) % SIZE;
+  { temp = ((temp << SHIFT) + key[i] + s) % SIZE;
     //pc("\nKEY i = %c", key[i]);
     //pc("\nADD because 1 digit\n");
     ++i;
@@ -71,10 +87,10 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
   //pc("\n\nHASH OF INSERT -----------------------------------------------------------\n\n");
   if (name == NULL)
     return;
-  int h = hash(name);
+  int h = hash(name, scope);
   //pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
-  while ((l != NULL) && (strcmp(name,l->name) != 0))
+  while ((l != NULL) && (strcmp(name,l->name) != 0) && (strcmp(scope,l->scope) != 0))
     l = l->next;
   if (l == NULL) /* variable not yet in table */
   { l = (BucketList) malloc(sizeof(struct BucketListRec));
@@ -106,14 +122,14 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
 /* Function st_lookup returns the memory 
  * location of a variable or -1 if not found
  */
-int st_lookup ( char * name )
+int st_lookup ( char * name, char * scope)
 { 
   //pc("\n\nSTRING: %s --------------------------------------------------------------\n\n", name);
   if (name == NULL) return -1;
-  int h = hash(name);
+  int h = hash(name, scope);
   //pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
-  while ((l != NULL) && (strcmp(name,l->name) != 0))
+  while ((l != NULL) && (strcmp(name,l->name) != 0) && (strcmp(scope,l->scope) != 0))
     l = l->next;
   if (l == NULL) return -1;
   else return l->memloc;

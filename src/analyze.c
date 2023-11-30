@@ -80,7 +80,7 @@ static void insertNode( TreeNode * t) //alterar essa
 
         case FunDecK:
           // pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
-          if (st_lookup(t->child[0]->attr.name) == -1){
+          if (st_lookup(t->child[0]->attr.name, Scope) == -1){
             /* not yet in table, so treat as new definition */
               Scope = t->child[0]->attr.name;
               // if(!strcmp(t->child[0]->attr.name, "main")) {
@@ -98,9 +98,9 @@ static void insertNode( TreeNode * t) //alterar essa
 
         case CallK:
           // pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
-          if (st_lookup(t->attr.name) == -1){
+          if (st_lookup(t->attr.name, Scope) == -1){
             /* not yet in table, so treat as new definition */
-              Scope = t->attr.name;
+              //Scope = t->attr.name;
               // pc("\n\n%s (3) CHAMA INSERT\n\n", t->attr.name);
               st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");
             } else {
@@ -120,14 +120,19 @@ static void insertNode( TreeNode * t) //alterar essa
       switch (t->kind.exp)
       { 
           case IdK:
-                  if (st_lookup(t->attr.name) == -1)
+                  if(Scope == t->attr.name) break;
+                  if ((st_lookup(t->attr.name, Scope) == -1)){
                     /* not yet in table, so treat as new definition */
                       st_insert(t->attr.name,t->lineno,location++, Scope , (char*)pop(&var_or_array_stack), var_type);
+                  
+                      }
+                  
                 //pc("%s", Scope);
                     else
                     /* already in table, so ignore location, 
                       add line number of use only */ 
-                      st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+     
+                      st_insert(t->attr.name,t->lineno,0, Scope ,(char*)pop(&var_or_array_stack), "");
           break;
 
         case ConstK: 

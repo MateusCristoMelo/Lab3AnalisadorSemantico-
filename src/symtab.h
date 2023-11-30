@@ -19,7 +19,7 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
 /* Function st_lookup returns the memory 
  * location of a variable or -1 if not found
  */
-int st_lookup ( char * name );
+int st_lookup ( char * name , char * scope);
 
 /* Procedure printSymTab prints a formatted 
  * list of the symbol table contents 
