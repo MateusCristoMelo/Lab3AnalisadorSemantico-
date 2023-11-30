@@ -26,8 +26,8 @@ static int hash ( char * key )
   int i = 0;
   while (key[i] != '\0')
   { temp = ((temp << SHIFT) + key[i]) % SIZE;
-    pc("\nKEY i = %c", key[i]);
-    pc("\nADD because 1 digit\n");
+    //pc("\nKEY i = %c", key[i]);
+    //pc("\nADD because 1 digit\n");
     ++i;
   }
   return temp;
@@ -68,9 +68,11 @@ static BucketList hashTable[SIZE];
  */
 void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, char * data_type)
 { 
-  pc("\n\nHASH OF INSERT -----------------------------------------------------------\n\n");
+  //pc("\n\nHASH OF INSERT -----------------------------------------------------------\n\n");
+  if (name == NULL)
+    return;
   int h = hash(name);
-  pc("\n\nHASH: %d\n", h);
+  //pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
   while ((l != NULL) && (strcmp(name,l->name) != 0))
     l = l->next;
@@ -106,10 +108,10 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
  */
 int st_lookup ( char * name )
 { 
-  pc("\n\nSTRING: %s --------------------------------------------------------------\n\n", name);
+  //pc("\n\nSTRING: %s --------------------------------------------------------------\n\n", name);
   if (name == NULL) return -1;
   int h = hash(name);
-  pc("\n\nHASH: %d\n", h);
+  //pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
   while ((l != NULL) && (strcmp(name,l->name) != 0))
     l = l->next;
