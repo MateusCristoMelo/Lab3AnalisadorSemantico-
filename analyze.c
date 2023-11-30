@@ -11,7 +11,7 @@
 #include "analyze.h"
 #include "util.h"
 
-extern struct Stack var_or_array_stack;
+extern struct Queue var_or_array_stack;
 
 /* counter for variable memory locations */
 static int location = 0;
@@ -24,11 +24,10 @@ static int hasMain = 0;
  * it applies preProc in preorder and postProc 
  * in postorder to tree pointed to by t
  */
-static void traverse( TreeNode * t,
-               void (* preProc) (TreeNode *),
-               void (* postProc) (TreeNode *) )
+static void traverse( TreeNode * t, void (* preProc) (TreeNode *), void (* postProc) (TreeNode *) )
 { if (t != NULL)
-  { preProc(t);
+  { 
+    preProc(t);
     { int i;
       for (i=0; i < MAXCHILDREN; i++)
         traverse(t->child[i],preProc,postProc);
@@ -37,6 +36,10 @@ static void traverse( TreeNode * t,
     traverse(t->sibling,preProc,postProc);
   }
 }
+
+// if (!hasMain) {
+//           typeError(t,"undefined reference to 'main'");
+//   }
 
 /* nullProc is a do-nothing procedure to 
  * generate preorder-only or postorder-only
@@ -53,6 +56,25 @@ char* Token2Char(TokenType token)
   { 
     case VOID: return "void";
     case INT: return "int"; 
+    case ASSIGN: return "=";
+    case EQ: return "==";
+    case LT: return "<";
+    case LE: return "<=";
+    case GT: return ">";
+    case GE: return ">=";
+    case NE: return "!=";
+    case LPAREN: return "(";
+    case RPAREN: return ")";
+    case SEMI: return ";";
+    case PLUS: return "+";
+    case MINUS: return "-";
+    case TIMES: return "*";
+    case OVER: return "/";
+    case COMMA: return ",";
+    case LBRACE: return "{";
+    case RBRACE: return "}";
+    case LBRACKET: return "[";
+    case RBRACKET: return "]";
     default: /* should never happen */ pc("Unknown token: %d\n",token);
   }
 }
@@ -64,8 +86,8 @@ char* Val2Char(int value)
   return "void";
 }
 
-char *Scope;
-char *var_type;
+char *Scope = NULL;
+char *var_type= NULL;
 
 /* Procedure insertNode inserts 
  * identifiers stored in t into 
@@ -78,69 +100,73 @@ static void insertNode( TreeNode * t) //alterar essa
   { case StmtK:
       switch (t->kind.stmt)
       { 
-      case VarDecK: 
-        var_type = Token2Char(t->attr.op); break; //tratado em idk
+        case VarDecK: 
+          // pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          var_type = Token2Char(t->attr.op); break; //tratado em idk
 
-      case FunDecK:
-        if (st_lookup(t->child[0]->attr.name) == -1){
-          /* not yet in table, so treat as new definition */
-            Scope = t->child[0]->attr.name;
-            // if(!strcmp(t->child[0]->attr.name, "main")) {
-            //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
-            // }
-            // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
-            st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));
-          } else {
+        case FunDecK:
+          // pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          if (st_lookup(t->child[0]->attr.name, Scope) == -1){
+            /* not yet in table, so treat as new definition */
+              Scope = t->child[0]->attr.name;
+              // if(!strcmp(t->child[0]->attr.name, "main")) {
+              //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
+              // }
+              // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
+              st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));
+            } else {
+                /* already in table, so ignore location, 
+              add line number of use only */ 
+              //  pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
+              st_insert(t->child[0]->attr.name,t->child[0]->lineno,0, "" ,"", "");
+            }
+          break;
+
+        case CallK:
+          // pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+          if (st_lookup(t->attr.name, Scope) == -1){
+            /* not yet in table, so treat as new definition */
+              //Scope = t->attr.name;
+              // pc("\n\n%s (3) CHAMA INSERT\n\n", t->attr.name);
+              st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");
+            } else {
               /* already in table, so ignore location, 
-             add line number of use only */ 
-            //  pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
-            st_insert(t->child[0]->attr.name,t->child[0]->lineno,0, "" ,"", "");
-          }
-        break;
+              add line number of use only */
+              //  pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
+              st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+            }
+          break;
 
-      case CallK:
-        if (st_lookup(t->attr.name) == -1){
-          /* not yet in table, so treat as new definition */
-            Scope = t->attr.name;
-            // pc("\n\n%s (3) CHAMA INSERT\n\n", t->attr.name);
-            st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");
-          } else {
-            /* already in table, so ignore location, 
-             add line number of use only */
-            //  pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
-            st_insert(t->attr.name,t->lineno,0, "" ,"", "");
-          }
-        break;
-
-      default:
-        break;
+        default:
+          break;
       }
       break;
     case ExpK:
+      // pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
       switch (t->kind.exp)
-      { case IdK:
-        if (st_lookup(t->attr.name) == -1) {
-          /* not yet in table, so treat as new definition */
-          // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
-            if (isEmpty(&var_or_array_stack)) {
-                printf("Erro: a pilha está vazia e não é possível retirar elementos.\n");
-            } else {
-                push(&var_or_array_stack, var_or_array_stack.items[0]);
-                for(int i = 0; i < ((var_or_array_stack.top)-1); ++i)
-                {
-                  var_or_array_stack.items[i] = var_or_array_stack.items[(i+1)];
-                }
-            }
-            st_insert(t->attr.name,t->lineno,location++, Scope , pop(&var_or_array_stack), var_type);
-        } else {
-            /* already in table, so ignore location, 
-             add line number of use only */ 
-            //  pc("\n\n%s (6) CHAMA INSERT\n\n", t->attr.name);
-            st_insert(t->attr.name,t->lineno,0, "" ,"", "");
-        }
+      { 
+          case IdK:
+                  if(Scope == t->attr.name) break;
+                  if ((st_lookup(t->attr.name, Scope) == -1)){
+                    /* not yet in table, so treat as new definition */
+                      st_insert(t->attr.name,t->lineno,location++, Scope , (char*)dequeue(&var_or_array_stack), var_type);
+                  
+                      }
+                  
+                //pc("%s", Scope);
+                    else
+                    /* already in table, so ignore location, 
+                      add line number of use only */ 
+     
+                      st_insert(t->attr.name,t->lineno,0, Scope ,"", "");
           break;
-        case ConstK: break; //o valor da variavel nao entra na tabela
-        case OpK: break; //operador nao entra na tabela
+
+        case ConstK: 
+          break; //o valor da variavel nao entra na tabela
+
+        case OpK: 
+          break; //operador nao entra na tabela
+
         default:
           break;
       }
@@ -173,7 +199,7 @@ void buildSymtab(TreeNode * syntaxTree)
 }
 
 static void typeError(TreeNode * t, char * message)
-{ pce("Type error at line %d: %s\n",t->lineno,message);
+{ pce("Semantic error at line %d: %s\n",t->lineno,message);
   Error = TRUE;
 }
 
@@ -181,13 +207,13 @@ static void typeError(TreeNode * t, char * message)
  * type checking at a single tree node
  */
 static void checkNode(TreeNode * t) //alterar essa
-{ /*
+{
   switch (t->nodekind)
   { case ExpK:
       switch (t->kind.exp)
       { case OpK:
           if ((t->child[0]->type != Integer) ||
-              (t->child[1]->type != Integer))
+              (t->child[2]->type != Integer))
             typeError(t,"Op applied to non-integer");
           if ((t->attr.op == EQ) || (t->attr.op == LT))
             t->type = Boolean;
@@ -196,7 +222,7 @@ static void checkNode(TreeNode * t) //alterar essa
           break;
         case ConstK:
         case IdK:
-          if (var_type != INT)
+          if (var_type != Token2Char(INT))
             typeError(t,"variable declared void");
           break;
         default:
@@ -210,12 +236,12 @@ static void checkNode(TreeNode * t) //alterar essa
             typeError(t->child[0],"if test is not Boolean");
           break;
         case AssignK:
-          if (t->child[0]->type != Integer)
-            typeError(t->child[0],"assignment of non-integer value");
+          // if (t->child[0]->type != Integer)
+          //   typeError(t->child[0],"assignment of non-integer value");
           break;
         case WhileK:
-          if (t->child[1]->type == Integer)
-            typeError(t->child[1],"repeat test is not Boolean");
+          if (t->child[0]->type == Integer)
+            typeError(t->child[0],"repeat test is not Boolean");
           break;
         case ReturnK:
           //if (t->child[1]->type == Integer)
@@ -223,7 +249,7 @@ static void checkNode(TreeNode * t) //alterar essa
         case CallK:
         case VarDecK:
         case FunDecK:
-          if (t->child[0]->type != Token2Char(t->attr.op))
+          if (t->child[0]->type != Void)
             typeError(t->child[0],"invalid use of void expression");
           if (strcmp(t->attr.name, "main") == 0) {
               hasMain = 1;  // Marcar que a função main foi encontrada
@@ -236,16 +262,16 @@ static void checkNode(TreeNode * t) //alterar essa
     default:
       break;
 
-  }*/
+  }
 }
 
-/*
-void checkMain(TreeNode * syntaxTree)
-{
-    traverse(syntaxTree, checkNode, nullProc);
-
-    if (!hasMain) {
-        typeError(t,"undefined reference to 'main'");
-
-
-*/
+/* Procedure typeCheck performs type checking 
+ * by a postorder syntax tree traversal
+ */
+void typeCheck(TreeNode * syntaxTree)
+{ 
+  traverse(syntaxTree,nullProc,checkNode);
+  if (!hasMain) {
+          typeError(syntaxTree,"undefined reference to 'main'");
+  }
+}
