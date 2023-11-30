@@ -173,19 +173,21 @@ void buildSymtab(TreeNode * syntaxTree)
 }
 
 static void typeError(TreeNode * t, char * message)
-{ pce("Type error at line %d: %s\n",t->lineno,message);
+{ pce("Semantic error at line %d: %s\n",t->lineno,message);
   Error = TRUE;
 }
 
 /* Procedure checkNode performs
  * type checking at a single tree node
  */
+
+
 static void checkNode(TreeNode * t) //alterar essa
-{ /*
+{
   switch (t->nodekind)
   { case ExpK:
       switch (t->kind.exp)
-      { case OpK:
+      { /*case OpK:
           if ((t->child[0]->type != Integer) ||
               (t->child[1]->type != Integer))
             typeError(t,"Op applied to non-integer");
@@ -194,17 +196,18 @@ static void checkNode(TreeNode * t) //alterar essa
           else
             t->type = Integer;
           break;
-        case ConstK:
-        case IdK:
-          t->type = Integer;
-          break;
+        case ConstK:*/
+        /*case IdK:
+          if (t->attr.op == VOID)
+            typeError(t->attr.op,"variable declared void");
+          break;*/
         default:
           break;
       }
       break;
     case StmtK:
       switch (t->kind.stmt)
-      { case IfK:
+      { /*case IfK:
           if (t->child[0]->type == Integer)
             typeError(t->child[0],"if test is not Boolean");
           break;
@@ -218,10 +221,12 @@ static void checkNode(TreeNode * t) //alterar essa
           break;
         case ReturnK:
           //if (t->child[1]->type == Integer)
-          //  typeError(t->child[1],"repeat test is not Boolean");
+          //  typeError(t->child[1],"repeat test is not Boolean");*/
         case CallK:
         case VarDecK:
         case FunDecK:
+          /*if (t->child[0]->type == Token2Char(t->attr.op))
+            typeError(t->child[0],"invalid use of void expression");*/
         default:
           break;
       }
@@ -229,9 +234,8 @@ static void checkNode(TreeNode * t) //alterar essa
     default:
       break;
 
-  }*/
+  }
 }
-
 
 
 /* Procedure typeCheck performs type checking 
