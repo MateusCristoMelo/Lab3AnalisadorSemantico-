@@ -11,7 +11,7 @@
 #include "analyze.h"
 #include "util.h"
 
-extern struct Stack var_or_array_stack;
+extern struct Queue var_or_array_stack;
 
 /* counter for variable memory locations */
 static int location = 0;
@@ -123,7 +123,7 @@ static void insertNode( TreeNode * t) //alterar essa
                   if(Scope == t->attr.name) break;
                   if ((st_lookup(t->attr.name, Scope) == -1)){
                     /* not yet in table, so treat as new definition */
-                      st_insert(t->attr.name,t->lineno,location++, Scope , (char*)pop(&var_or_array_stack), var_type);
+                      st_insert(t->attr.name,t->lineno,location++, Scope , (char*)dequeue(&var_or_array_stack), var_type);
                   
                       }
                   
@@ -132,7 +132,7 @@ static void insertNode( TreeNode * t) //alterar essa
                     /* already in table, so ignore location, 
                       add line number of use only */ 
      
-                      st_insert(t->attr.name,t->lineno,0, Scope ,(char*)pop(&var_or_array_stack), "");
+                      st_insert(t->attr.name,t->lineno,0, Scope ,"", "");
           break;
 
         case ConstK: 

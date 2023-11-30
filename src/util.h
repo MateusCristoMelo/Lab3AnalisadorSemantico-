@@ -57,4 +57,24 @@ void push(struct Stack *stack, void *item);
 // Função para retirar um elemento da pilha (pop)
 void *pop(struct Stack *stack);
 
+// Estrutura para a fila
+struct Queue {
+    int front, rear, size;
+    void *items[MAX_SIZE];
+};
+
+// Função para inicializar a fila
+void initQueue(struct Queue *queue) ;
+
+// Função para verificar se a fila está vazia
+int isEmptyQueue(struct Queue *queue);
+
+// Função para verificar se a fila está cheia
+int isFullQueue(struct Queue *queue) ;
+
+// Função para adicionar um elemento à fila (enqueue)
+void enqueue(struct Queue *queue, void *item) ;
+
+// Função para retirar um elemento da fila (dequeue)
+void *dequeue(struct Queue *queue);
 #endif

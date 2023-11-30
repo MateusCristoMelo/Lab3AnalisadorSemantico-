@@ -48,6 +48,53 @@ void *pop(struct Stack *stack) {
 }
 
 
+
+
+
+// Função para inicializar a fila
+void initQueue(struct Queue *queue) {
+    queue->front = queue->rear = -1;
+    queue->size = 0;
+}
+
+// Função para verificar se a fila está vazia
+int isEmptyQueue(struct Queue *queue) {
+    return (queue->size == 0);
+}
+
+// Função para verificar se a fila está cheia
+int isFullQueue(struct Queue *queue) {
+    return (queue->size == MAX_SIZE);
+}
+
+// Função para adicionar um elemento à fila (enqueue)
+void enqueue(struct Queue *queue, void *item) {
+    if (isFullQueue(queue)) {
+        printf("Erro: a fila está cheia e não é possível adicionar mais elementos.\n");
+    } else {
+        if (isEmptyQueue(queue)) {
+            queue->front = 0;  // Se a fila estiver vazia, ajusta o front para 0
+        }
+        queue->rear = (queue->rear + 1) % MAX_SIZE;  // Circularmente avança o rear
+        queue->items[queue->rear] = item;
+        queue->size++;
+    }
+}
+
+// Função para retirar um elemento da fila (dequeue)
+void *dequeue(struct Queue *queue) {
+    if (isEmptyQueue(queue)) {
+        //printf("Erro: a fila está vazia e não é possível retirar elementos.\n");
+        return NULL;
+    } else {
+        void *item = queue->items[queue->front];
+        queue->front = (queue->front + 1) % MAX_SIZE;  // Circularmente avança o front
+        queue->size--;
+        return item;
+    }
+}
+
+
 void printTokenSyn( TokenType token, const char* tokenString )
 { switch (token)
   { 

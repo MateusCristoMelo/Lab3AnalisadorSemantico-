@@ -22,7 +22,7 @@ static int yylex(void);
 int yyerror(char *s);
 extern struct Stack name_stack;
 extern struct Stack number_stack;
-extern struct Stack var_or_array_stack;
+extern struct Queue var_or_array_stack;
 extern struct Stack lineno_stack;
 extern char *id_name;
 
@@ -71,14 +71,14 @@ var_declaracao:
         $$->child[0]->lineno = atoi(copyString(poppedLin));
         free(poppedLin);
 
-        push(&var_or_array_stack, "var"); 
+        enqueue(&var_or_array_stack, "var"); 
         
     }
     | tipo_especificador ID LBRACKET NUM RBRACKET SEMI {
         $$ = newStmtNode(VarDecK);
         $$->attr.op = (TokenType)(intptr_t)$1;
         $$->child[0] = newExpNode(IdK);
-        push(&var_or_array_stack, "array"); 
+        enqueue(&var_or_array_stack, "array"); 
         char *poppedStr = (char *)pop(&name_stack);
         $$->child[0]->attr.name = copyString(poppedStr);
         char *poppedLin = (char *)pop(&lineno_stack);
@@ -100,7 +100,8 @@ tipo_especificador:
 ;
 
 fun_declaracao:
-                tipo_especificador ID LPAREN params RPAREN composto_decl {$$ = newStmtNode(FunDecK);                                                                                                                                     
+                tipo_especificador ID LPAREN params RPAREN composto_decl {
+                                                                          $$ = newStmtNode(FunDecK);      
                                                                           $$->attr.op = (TokenType)(intptr_t)$1;
                                                                           $$->child[0] = newExpNode(IdK);
                                                                           char *poppedStr = (char *)pop(&name_stack);
@@ -108,7 +109,7 @@ fun_declaracao:
                                                                           char *poppedLin = (char *)pop(&lineno_stack);
                                                                           $$->child[0]->lineno = atoi(copyString(poppedLin));
                                                                           free(poppedLin);
-                                                                          push(&var_or_array_stack, "var"); 
+                                                                          
                                                                           $$->child[1] = $4;
                                                                           $$->child[2] = $6;
                                                                           }
@@ -124,16 +125,17 @@ param_lista:
                                       if (t != NULL) {
                                         while (t->sibling != NULL) t = t->sibling;
                                               t->sibling = $3;
-                                              $$ = $1;
+                                              //$$ = $1;
                                     } else $$ = $3;}
 |           param {$$ = $1;}
 ;
+
 
 param: 
       tipo_especificador ID {$$ = newStmtNode(VarDecK);
 			                $$->attr.op = (TokenType)(intptr_t)$1;
 			                $$->child[0] = newExpNode(IdK);
-                      push(&var_or_array_stack, "var");
+                      enqueue(&var_or_array_stack, "var");
                       char *poppedStr = (char *)pop(&name_stack);
                       $$->child[0]->attr.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
@@ -144,7 +146,7 @@ param:
 |     tipo_especificador ID LBRACKET RBRACKET {$$ = newStmtNode(VarDecK);
 			                $$->attr.op = (TokenType)(intptr_t)$1;
 			                $$->child[0] = newExpNode(IdK);
-                      push(&var_or_array_stack, "array"); 
+                      enqueue(&var_or_array_stack, "array"); 
                       char *poppedStr = (char *)pop(&name_stack);
                       $$->child[0]->attr.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
@@ -235,7 +237,7 @@ var :
              char *poppedLin = (char *)pop(&lineno_stack);
              $$->lineno = atoi(copyString(poppedLin)); 
              free(poppedLin);
-             push(&var_or_array_stack, "var"); 
+             enqueue(&var_or_array_stack, "var"); 
             
             	    }
 |     ID LBRACKET expressao RBRACKET { $$ = newExpNode(IdK);
@@ -245,7 +247,7 @@ var :
                 char *poppedLin = (char *)pop(&lineno_stack);
                 $$->lineno = atoi(copyString(poppedLin));
                 free(poppedLin);
-                push(&var_or_array_stack, "array"); 
+                enqueue(&var_or_array_stack, "array"); 
 		      $$->child[0] = $3;}
 ;
 
@@ -309,7 +311,7 @@ ativacao :
             char *poppedLin = (char *)pop(&lineno_stack);
             $$->lineno = atoi(copyString(poppedLin));
             free(poppedLin);
-            push(&var_or_array_stack, "var"); 
+            //push(&var_or_array_stack, "var"); 
             $$->child[1] = $3;
             
           }
@@ -330,6 +332,7 @@ arg_lista :
                                         } 
 |           expressao {$$ = $1;}
 ;
+
 
 %%
 
