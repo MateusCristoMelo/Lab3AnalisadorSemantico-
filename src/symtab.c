@@ -21,27 +21,29 @@
 #define SHIFT 4
 
 
-int stringsum(char * comp_string)
-{ int i = 0;
-int sum = 0;
-  if(comp_string == NULL)
-    return 0;
+// int stringsum(char * comp_string)
+// { int i = 0;
+// int sum = 0;
+//   if(comp_string == NULL)
+//     return 0;
     
-    while (comp_string[i] != '\0') {
-        sum += comp_string[i] - '0';  // Convertendo o caractere para valor inteiro
-        i++;
-    }
+//     while (comp_string[i] != '\0') {
+//         sum += comp_string[i] - '0';  // Convertendo o caractere para valor inteiro
+//         i++;
+//     }
     
-  return sum;
-}
+//   return sum;
+// }
 
 /* the hash function */
-static int hash ( char * key , char * scope)
+static int hash ( char * key )
 { int temp = 0;
   int i = 0;
-  int s = stringsum(scope);
+  // int s = stringsum(scope);
   while (key[i] != '\0')
-  { temp = ((temp << SHIFT) + key[i] + s) % SIZE;
+  { 
+    temp = ((temp << SHIFT) + key[i]) % SIZE;
+    // temp = ((temp << SHIFT) + key[i] + s) % SIZE;
     //pc("\nKEY i = %c", key[i]);
     //pc("\nADD because 1 digit\n");
     ++i;
@@ -87,13 +89,23 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
   //pc("\n\nHASH OF INSERT -----------------------------------------------------------\n\n");
   if (name == NULL)
     return;
-  int h = hash(name, scope);
-  //pc("\n\nHASH: %d\n", h);
-  BucketList l =  hashTable[h];
-  while ((l != NULL) && (strcmp(name,l->name) != 0) && (strcmp(scope,l->scope) != 0))
+  int h = hash(name);
+  // pc("\n\nHASH: %d\n", h);
+  // pc("NAME: %s\n", name);
+  // pc("SCOPE: %s\n", scope);
+  BucketList l = hashTable[h];
+  while (l != NULL)
+  {
+    if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0))
+    {
+      break;
+    }
     l = l->next;
+    // pc("STORING IN NEXT BUCKET\n");
+  }
   if (l == NULL) /* variable not yet in table */
-  { l = (BucketList) malloc(sizeof(struct BucketListRec));
+  { 
+    l = (BucketList) malloc(sizeof(struct BucketListRec));
     l->name = name;
     l->lines = (LineList) malloc(sizeof(struct LineListRec));
     l->lines->lineno = lineno;
@@ -107,7 +119,8 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
     l->next = hashTable[h];
     hashTable[h] = l; }
   else /* found in table, so just add line number */
-  { LineList t = l->lines;
+  { 
+    LineList t = l->lines;
     if(t->lineno == lineno) return;
     while (t->next != NULL) {
       if(t->next->lineno == lineno) return;
@@ -126,11 +139,18 @@ int st_lookup ( char * name, char * scope)
 { 
   //pc("\n\nSTRING: %s --------------------------------------------------------------\n\n", name);
   if (name == NULL) return -1;
-  int h = hash(name, scope);
+  int h = hash(name);
   //pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
-  while ((l != NULL) && (strcmp(name,l->name) != 0) && (strcmp(scope,l->scope) != 0))
+  while (l != NULL)
+  {
+    if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0))
+    {
+      break;
+    }
     l = l->next;
+    // pc("STORING IN NEXT BUCKET\n");
+  }
   if (l == NULL) return -1;
   else return l->memloc;
 }
@@ -143,17 +163,19 @@ void printSymTab()//tem q alterar
   pc("Variable Name  Scope     ID Type  Data Type  Line Numbers             \n");
   pc("-------------  --------  -------  ---------  -------------------------\n");
   for (i=0;i<SIZE;++i)
-  { if (hashTable[i] != NULL)
-    { BucketList l = hashTable[i];
+  { 
+    if (hashTable[i] != NULL)
+    { 
+      BucketList l = hashTable[i];
       while (l != NULL)
-      { LineList t = l->lines;
+      { 
         pc("%-14s ",l->name);
-
         pc("%-8s  ",l->scope);
         pc("%-7s  ",l->id_type);
         pc("%-9s  ",l->data_type);
 
         //pc("%-8d  ",l->memloc);
+        LineList t = l->lines;
         while (t != NULL)
         {
           if(t->lineno != 0)
@@ -163,6 +185,7 @@ void printSymTab()//tem q alterar
           t = t->next;
         }
         pc("\n");
+
         l = l->next;
       }
     }

@@ -16,6 +16,9 @@ extern struct Queue var_or_array_stack;
 /* counter for variable memory locations */
 static int location = 0;
 
+// Variável global para rastrear se a função main foi encontrada
+static int hasMain = 0;
+
 /* Procedure traverse is a generic recursive 
  * syntax tree traversal routine:
  * it applies preProc in preorder and postProc 
@@ -135,10 +138,10 @@ static void insertNode( TreeNode * t) //alterar essa
                       st_insert(t->attr.name,t->lineno,0, Scope ,"", "");
           break;
 
-        case ConstK: 
+        case ConstK:
           break; //o valor da variavel nao entra na tabela
 
-        case OpK: 
+        case OpK:
           break; //operador nao entra na tabela
 
         default:
@@ -170,6 +173,16 @@ void buildSymtab(TreeNode * syntaxTree)
   { pc("\nSymbol table:\n\n");
     printSymTab();
   }
+  pc("\nChecking for main...\n");
+  // if (!hasMain)
+  // {
+  //   typeError(syntaxTree,"undefined reference to 'main'");
+  // }
+
+  // if (st_lookup("~", "main") == NULL)
+  // { fprintf(listing, "There is no main function");
+  //   Error = TRUE;
+  // }
 }
 
 static void typeError(TreeNode * t, char * message)
@@ -180,53 +193,56 @@ static void typeError(TreeNode * t, char * message)
 /* Procedure checkNode performs
  * type checking at a single tree node
  */
-
-
 static void checkNode(TreeNode * t) //alterar essa
 {
   switch (t->nodekind)
   { case ExpK:
       switch (t->kind.exp)
-      { /*case OpK:
-          if ((t->child[0]->type != Integer) ||
-              (t->child[1]->type != Integer))
-            typeError(t,"Op applied to non-integer");
+      { case OpK:
+          if ((t->child[0]->type != Integer) || (t->child[2]->type != Integer))
+            // typeError(t,"Op applied to non-integer");
           if ((t->attr.op == EQ) || (t->attr.op == LT))
             t->type = Boolean;
           else
             t->type = Integer;
           break;
-        case ConstK:*/
-        /*case IdK:
-          if (t->attr.op == VOID)
-            typeError(t->attr.op,"variable declared void");
-          break;*/
+        case ConstK:
+        case IdK:
+          if (var_type != Token2Char(INT))
+            // typeError(t,"variable declared void");
+          break;
         default:
           break;
       }
       break;
     case StmtK:
       switch (t->kind.stmt)
-      { /*case IfK:
+      { case IfK:
           if (t->child[0]->type == Integer)
-            typeError(t->child[0],"if test is not Boolean");
+            // typeError(t->child[0],"if test is not Boolean");
           break;
         case AssignK:
           if (t->child[0]->type != Integer)
-            typeError(t->child[0],"assignment of non-integer value");
+            // typeError(t->child[0],"assignment of non-integer value");
           break;
         case WhileK:
-          if (t->child[1]->type == Integer)
-            typeError(t->child[1],"repeat test is not Boolean");
+          if (t->child[0]->type == Integer)
+            // typeError(t->child[0],"while has no right parameters");
           break;
         case ReturnK:
-          //if (t->child[1]->type == Integer)
-          //  typeError(t->child[1],"repeat test is not Boolean");*/
+          if (t->child[0]->type == Integer)
+          //  typeError(t->child[0],"return of function isnt correct");
         case CallK:
         case VarDecK:
         case FunDecK:
-          /*if (t->child[0]->type == Token2Char(t->attr.op))
-            typeError(t->child[0],"invalid use of void expression");*/
+          if (t->child[0]->type != Void)
+            // typeError(t->child[0],"invalid use of void expression");
+          // if (t->child[0]->attr.name != NULL) {
+          //   if (t->child[0]->attr.name == "main") {
+          //       hasMain = 1;  // Marcar que a função main foi encontrada
+          //   }
+          // }
+          break;
         default:
           break;
       }
@@ -242,5 +258,6 @@ static void checkNode(TreeNode * t) //alterar essa
  * by a postorder syntax tree traversal
  */
 void typeCheck(TreeNode * syntaxTree)
-{ traverse(syntaxTree,nullProc,checkNode);
+{ 
+  traverse(syntaxTree,nullProc,checkNode);
 }

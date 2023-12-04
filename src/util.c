@@ -48,9 +48,6 @@ void *pop(struct Stack *stack) {
 }
 
 
-
-
-
 // Função para inicializar a fila
 void initQueue(struct Queue *queue) {
     queue->front = queue->rear = -1;
@@ -93,7 +90,6 @@ void *dequeue(struct Queue *queue) {
         return item;
     }
 }
-
 
 void printTokenSyn( TokenType token, const char* tokenString )
 { switch (token)
