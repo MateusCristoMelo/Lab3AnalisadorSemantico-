@@ -225,30 +225,32 @@ retorno_decl :
 ;
 
 expressao : 
-              var ASSIGN expressao {$$ = newStmtNode(AssignK);
+      var ASSIGN expressao {
+          $$ = newStmtNode(AssignK);
 			    $$->child[0] = $1;
 			    $$->child[1] = $3;}
-|             simples_expressao {$$ = $1;}
+|     simples_expressao {
+          $$ = $1;
+      }
 ;
 
 var : 
-      ID {$$ = newExpNode(IdK);
-		         char *poppedStr = (char *)pop(&name_stack);
-             $$->attr.name = copyString(poppedStr);
-             char *poppedLin = (char *)pop(&lineno_stack);
-             $$->lineno = atoi(copyString(poppedLin)); 
-             free(poppedLin);
-             enqueue(&var_or_array_stack, "var"); 
-            
-            	    }
-|     ID LBRACKET expressao RBRACKET { $$ = newExpNode(IdK);
-
-                char *poppedStr = (char *)pop(&name_stack);
-                $$->attr.name = copyString(poppedStr);
-                char *poppedLin = (char *)pop(&lineno_stack);
-                $$->lineno = atoi(copyString(poppedLin));
-                free(poppedLin);
-                enqueue(&var_or_array_stack, "array"); 
+      ID {
+          $$ = newExpNode(IdK);
+          char *poppedStr = (char *)pop(&name_stack);
+          $$->attr.name = copyString(poppedStr);
+          char *poppedLin = (char *)pop(&lineno_stack);
+          $$->lineno = atoi(copyString(poppedLin)); 
+          free(poppedLin);
+          enqueue(&var_or_array_stack, "var"); }
+|     ID LBRACKET expressao RBRACKET { 
+          $$ = newExpNode(IdK);
+          char *poppedStr = (char *)pop(&name_stack);
+          $$->attr.name = copyString(poppedStr);
+          char *poppedLin = (char *)pop(&lineno_stack);
+          $$->lineno = atoi(copyString(poppedLin));
+          free(poppedLin);
+          enqueue(&var_or_array_stack, "array"); 
 		      $$->child[0] = $3;}
 ;
 

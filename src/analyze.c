@@ -16,9 +16,6 @@ extern struct Queue var_or_array_stack;
 /* counter for variable memory locations */
 static int location = 0;
 
-// Variável global para rastrear se a função main foi encontrada
-static int hasMain = 0;
-
 /* Procedure traverse is a generic recursive 
  * syntax tree traversal routine:
  * it applies preProc in preorder and postProc 
@@ -46,6 +43,23 @@ static void nullProc(TreeNode * t)
   else return;
 }
 
+static void typeError(TreeNode * t, char * message)
+{ 
+  if(!strcmp(message, "undefined reference to 'main'")) 
+  {
+    TraceAnalyze = FALSE;
+    pce("Semantic error: %s\n",message);
+  }
+  else if(!strcmp(message, "was not declared in this scope")) 
+  {
+    pce("Semantic error at line %d: '%s' %s\n",t->lineno, t->attr.name, message);
+  }
+  else
+  {
+    pce("Semantic error at line %d: %s\n",t->lineno,message);
+  }
+  Error = TRUE;
+}
 
 char* Token2Char(TokenType token)
 { switch (token)
@@ -70,7 +84,7 @@ char *var_type= NULL;
  * identifiers stored in t into 
  * the symbol table 
  */
-static void insertNode( TreeNode * t) //alterar essa
+static void insertNode(TreeNode * t) //alterar essa
 {
   // pc("\n\nINSERT NODE\n\n");
   switch (t->nodekind)
@@ -78,39 +92,41 @@ static void insertNode( TreeNode * t) //alterar essa
       switch (t->kind.stmt)
       { 
         case VarDecK: 
-          // pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
-          var_type = Token2Char(t->attr.op); break; //tratado em idk
+          // pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->child[0]->attr.name));
+          // pc("\n\n%s (0) CHAMA INSERT\n\n", t->child[0]->attr.name);
+          st_insert(t->child[0]->attr.name, t->child[0]->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), Token2Char(t->attr.op));
+          break; //tratado em idk
 
         case FunDecK:
           // pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
           if (st_lookup(t->child[0]->attr.name, Scope) == -1){
             /* not yet in table, so treat as new definition */
-              Scope = t->child[0]->attr.name;
-              // if(!strcmp(t->child[0]->attr.name, "main")) {
-              //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
-              // }
-              // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
-              st_insert(t->child[0]->attr.name,t->child[0]->lineno,location++, "" ,"fun", Token2Char(t->attr.op));
-            } else {
-                /* already in table, so ignore location, 
-              add line number of use only */ 
-              //  pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
-              st_insert(t->child[0]->attr.name,t->child[0]->lineno,0, "" ,"", "");
-            }
+            Scope = t->child[0]->attr.name;
+            // if(!strcmp(t->child[0]->attr.name, "main")) {
+            //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
+            // }
+            // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
+            st_insert(t->child[0]->attr.name, t->child[0]->lineno, location++, "" , "fun", Token2Char(t->attr.op));
+          } else {
+            /* already in table, so ignore location, 
+            add line number of use only */ 
+            // pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
+            st_insert(t->child[0]->attr.name, t->child[0]->lineno, 0, "" , "", "");
+          }
           break;
 
         case CallK:
           // pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
-          if (st_lookup(t->attr.name, Scope) == -1){
+          if (st_lookup(t->attr.name, Scope) == -1) {
             /* not yet in table, so treat as new definition */
               //Scope = t->attr.name;
               // pc("\n\n%s (3) CHAMA INSERT\n\n", t->attr.name);
-              st_insert(t->attr.name,t->lineno,location++, "" ,"fun", "int");
+              st_insert(t->attr.name, t->lineno, location++, "" , "fun", "int");
             } else {
               /* already in table, so ignore location, 
               add line number of use only */
-              //  pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
-              st_insert(t->attr.name,t->lineno,0, "" ,"", "");
+              // pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
+              st_insert(t->attr.name, t->lineno, 0, "" , "", "");
             }
           break;
 
@@ -122,20 +138,21 @@ static void insertNode( TreeNode * t) //alterar essa
       // pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
       switch (t->kind.exp)
       { 
-          case IdK:
-                  if(Scope == t->attr.name) break;
-                  if ((st_lookup(t->attr.name, Scope) == -1)){
-                    /* not yet in table, so treat as new definition */
-                      st_insert(t->attr.name,t->lineno,location++, Scope , (char*)dequeue(&var_or_array_stack), var_type);
-                  
-                      }
-                  
-                //pc("%s", Scope);
-                    else
-                    /* already in table, so ignore location, 
-                      add line number of use only */ 
-     
-                      st_insert(t->attr.name,t->lineno,0, Scope ,"", "");
+        case IdK:
+          if(Scope == t->attr.name || t->attr.name == NULL) {
+            break;
+          }
+          if ((st_lookup(t->attr.name, Scope) == -1)) {
+            /* not yet in table, so treat as new definition */
+            // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
+            typeError(t,"was not declared in this scope");
+            // st_insert(t->attr.name, t->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), var_type);
+          } else {
+            /* already in table, so ignore location, 
+              add line number of use only */
+            // pc("\n\n%s (6) CHAMA INSERT\n\n", t->attr.name);
+            st_insert(t->attr.name, t->lineno, 0, Scope , "", "");
+          }
           break;
 
         case ConstK:
@@ -174,20 +191,10 @@ void buildSymtab(TreeNode * syntaxTree)
     printSymTab();
   }
   pc("\nChecking for main...\n");
-  // if (!hasMain)
-  // {
-  //   typeError(syntaxTree,"undefined reference to 'main'");
-  // }
-
-  // if (st_lookup("~", "main") == NULL)
-  // { fprintf(listing, "There is no main function");
-  //   Error = TRUE;
-  // }
-}
-
-static void typeError(TreeNode * t, char * message)
-{ pce("Semantic error at line %d: %s\n",t->lineno,message);
-  Error = TRUE;
+  if (st_lookup("main", "") == -1)
+  {
+    typeError(syntaxTree, "undefined reference to 'main'");
+  }
 }
 
 /* Procedure checkNode performs
