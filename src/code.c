@@ -39,10 +39,30 @@ void emitReturn(int v)
  * s = 1st source register
  * t = 2nd source register
  */
-void emitAssignInstruction(char *op, int r, int s, int t)
+
+
+void emitAssignInstruction( char *op, char* r, char* s, char* t) 
+{   if (strlen(op) == 0 && strlen(t) == 0) {
+        pc("          %s = %s \n",r,s); 
+    } else {
+        pc("          %s = %s %s %s \n",r,s,op,t);
+    }
+} /* emitAssingInstruction */
+
+void emitParamInstruction( char* c )
 {
-    pc("          t%s = t%d %c t%d \n",r,s,op,t);
+    pc("          param %s \n", c);
 }
+
+void emitCallInstruction( char* x, char *f, int n)
+{
+    pc("          %s = call %s, %d\n", x, f, n);
+}
+/*
+void emitCallInstruction( char* x, char *f, int n)
+{
+    fprintf(code,"\r%*s%s = call %s, %d", SPACE, "", x, f, n);
+}*/
 
 /* Procedure emitComment prints a comment line 
  * with comment c in the code file

@@ -111,6 +111,18 @@ static void genStmt( TreeNode * tree)
             //emitReturnInstruction(t1);
          }
          break; /* decl_k */
+         
+      case CallK: 
+         p1 = tree->child[1];
+         int countParams = 0;
+         while( p1 != NULL ){
+               countParams++;
+               cGen(p1);
+               emitParamInstruction("reg/var");
+               p1 = p1->sibling;
+         }
+         emitCallInstruction("nomefunc", tree->attr.name, countParams);
+         //t1 = getNewVariable();
 
       default:
          break;
@@ -125,13 +137,16 @@ static void genExp( TreeNode * tree)
 { 
    int loc;
   TreeNode * p1, * p2;
+  char * name1, * name2, * name3;
+  //Acho que uma fila/pilha aqui pra pegar os nomes talvez
+  name1 = "reg1"; name2 = "reg2"; name3 = "reg3";
   switch (tree->kind.exp) {
 
     case ConstK :
       //emitLabelInt(tree->attr.val);
       if (TraceCode) emitComment("-> Const") ;
       /* gen code to load integer constant using LDC */
-      emitRM("LDC",ac,tree->attr.val,0,"load const");
+      //emitRM("LDC",ac,tree->attr.val,0,"load const");
       if (TraceCode)  emitComment("<- Const") ;
       break; /* ConstK */
     
@@ -139,7 +154,7 @@ static void genExp( TreeNode * tree)
       if (TraceCode) emitComment("-> Id") ;
       loc = st_lookup(tree->attr.name, ScopeNow);
       //pc("Nome variavel %c", tree->attr.name);
-      emitRM("LD",ac,loc,gp,"load id value");
+      //emitRM("LD",ac,loc,gp,"load id value");
       if (TraceCode)  emitComment("<- Id") ;
       break; /* IdK */
 
@@ -150,28 +165,23 @@ static void genExp( TreeNode * tree)
          /* gen code for ac = left arg */
          
          /* gen code to push left operand */
-         emitRM("ST",ac,tmpOffset--,mp,"op: push left");
+         //emitRM("ST",ac,tmpOffset--,mp,"op: push left");
          /* gen code for ac = right operand */
          cGen(p1);
          /* now load left operand */
-         emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
+         //emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
          switch (tree->attr.op) {
             case PLUS :
-               emitAssignInstruction("+", ac,ac,ac);
-
-               //pc(" + ");
+               emitAssignInstruction("+", name1,name2,name3);
                break;
             case MINUS :
-               emitRO("-",ac,ac1,ac,"op -");
-               //pc(" - ");
+               emitAssignInstruction("-",  name1,name2,name3);
                break;
             case TIMES :
-               //pc(" * ");
-               emitRO("*",ac,ac1,ac,"op *");
+               emitAssignInstruction("*",  name1,name2,name3);
                break;
             case OVER :
-               //pc(" / ");
-               emitRO("/",ac,ac1,ac,"op /");
+               emitAssignInstruction("/",  name1,name2,name3);
                break;
             case LT :
                emitRO("SUB",ac,ac1,ac,"op <") ;
@@ -194,6 +204,9 @@ static void genExp( TreeNode * tree)
          } /* case op */
          if (TraceCode)  emitComment("<- Op") ;
          break; /* OpK */
+
+         
+            //emitCallInstruction(t1, tree->attr.id.name, countParams);
 
     default:
       break;

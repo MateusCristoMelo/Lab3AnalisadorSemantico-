@@ -34,7 +34,9 @@
 void emitLabel( char * label);
 void emitReturn( int v);
 void emitHalt();
-void emitAssignInstruction(char *op, int r, int s, int t);
+void emitAssignInstruction( char *op, char* r, char* s, char* t) ;
+void emitParamInstruction( char* c );
+void emitCallInstruction( char* x, char *f, int n);
 /* Procedure emitComment prints a comment line 
  * with comment c in the code file
  */
