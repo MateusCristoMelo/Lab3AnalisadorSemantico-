@@ -21,6 +21,8 @@ void st_insert( char * name, int lineno, int loc, char * scope, char * id_type, 
  */
 int st_lookup ( char * name , char * scope);
 
+char* id_lookup(char * name, char * scope);
+
 char* type_lookup(char * name, char * scope);
 
 /* Procedure printSymTab prints a formatted 

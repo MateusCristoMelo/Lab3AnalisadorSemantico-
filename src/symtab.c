@@ -143,7 +143,7 @@ int st_lookup ( char * name, char * scope)
   //pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
   while (l != NULL)
-  {
+  {    
     if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0))
     {
       break;
@@ -155,9 +155,9 @@ int st_lookup ( char * name, char * scope)
   else return l->memloc;
 }
 
-char* type_lookup(char * name, char * scope)
-{ 
-  if (name == NULL) return NULL;
+char* id_lookup(char * name, char * scope)
+{
+  if (name == NULL) return " ";
   int h = hash(name);
   BucketList l =  hashTable[h];
   while (l != NULL)
@@ -168,7 +168,25 @@ char* type_lookup(char * name, char * scope)
     }
     l = l->next;
   }
-  return l->data_type;
+  if (l == NULL) return " ";
+  else return l->id_type;
+}
+
+char* type_lookup(char * name, char * scope)
+{ 
+  if (name == NULL) return " ";
+  int h = hash(name);
+  BucketList l =  hashTable[h];
+  while (l != NULL)
+  {
+    if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0))
+    {
+      break;
+    }
+    l = l->next;
+  }
+  if (l == NULL) return " ";
+  else return l->data_type;
 }
 
 /* Procedure printSymTab prints a formatted 
