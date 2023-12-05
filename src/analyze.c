@@ -12,6 +12,7 @@
 #include "util.h"
 
 extern struct Queue var_or_array_stack;
+extern struct Stack _Scope;
 
 /* counter for variable memory locations */
 static int location = 0;
@@ -102,6 +103,7 @@ static void insertNode(TreeNode * t) //alterar essa
           if (st_lookup(t->child[0]->attr.name, Scope) == -1){
             /* not yet in table, so treat as new definition */
             Scope = t->child[0]->attr.name;
+            push(&_Scope, Scope);
             // if(!strcmp(t->child[0]->attr.name, "main")) {
             //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
             // }
@@ -229,7 +231,16 @@ static void checkNode(TreeNode * t) //alterar essa
             // typeError(t->child[0],"if test is not Boolean");
           break;
         case AssignK:
-          if (t->child[0]->type != Integer)
+          if (t->child[1]->kind.stmt == CallK) {
+            // pc("\n\nFIRST: %s \n\n", t->child[0]->attr.name);
+            // pc("\n\nSECOND: %s \n\n", t->child[1]->attr.name);
+            // pc("\n\nSECOND: %s \n\n", t->child[1]->attr.op);
+            // pc("\n\nCALL NO SCOPE: %s \n\n", Scope);
+            // pc("\n\n%s %s\n\n", t->child[1]->attr.name, Scope);
+            if (!strcmp(type_lookup(t->child[1]->attr.name, ""), "void")) {
+              typeError(t, "invalid use of void expression");
+            }
+          }
             // typeError(t->child[0],"assignment of non-integer value");
           break;
         case WhileK:
@@ -240,10 +251,21 @@ static void checkNode(TreeNode * t) //alterar essa
           if (t->child[0]->type == Integer)
           //  typeError(t->child[0],"return of function isnt correct");
         case CallK:
+          break;
         case VarDecK:
+          if (t->attr.op == Void) {
+            typeError(t->child[0], "invalid use of void expression");
+          }
+          break;
         case FunDecK:
-          if (t->child[0]->type != Void)
-            // typeError(t->child[0],"invalid use of void expression");
+          // pc("\n\nMUDANCA DE SCOPE, saindo do atual: %s\n", Scope);
+          if(_Scope.top == -1) {
+            Scope = NULL;  
+          } else {
+            Scope = _Scope.items[_Scope.top];
+            pop(&_Scope);
+          }
+          // pc("Novo SCOPE: %s\n\n", Scope);
           // if (t->child[0]->attr.name != NULL) {
           //   if (t->child[0]->attr.name == "main") {
           //       hasMain = 1;  // Marcar que a função main foi encontrada

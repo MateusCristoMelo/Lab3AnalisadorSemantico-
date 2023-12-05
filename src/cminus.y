@@ -180,7 +180,7 @@ local_declaracoes:
 ;
 
 statement_lista:
-                  statement_lista statement {YYSTYPE t = $1;
+      statement_lista statement {YYSTYPE t = $1;
                 if (t != NULL){
 			        while (t->sibling != NULL) t = t->sibling;
                     t->sibling = $2;

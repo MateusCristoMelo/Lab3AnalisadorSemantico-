@@ -155,6 +155,22 @@ int st_lookup ( char * name, char * scope)
   else return l->memloc;
 }
 
+char* type_lookup(char * name, char * scope)
+{ 
+  if (name == NULL) return NULL;
+  int h = hash(name);
+  BucketList l =  hashTable[h];
+  while (l != NULL)
+  {
+    if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0))
+    {
+      break;
+    }
+    l = l->next;
+  }
+  return l->data_type;
+}
+
 /* Procedure printSymTab prints a formatted 
  * list of the symbol table contents 
  */

@@ -39,6 +39,7 @@ FILE * code;
 char **linhas = NULL;
 struct Stack name_stack;
 struct Stack number_stack; 
+struct Stack _Scope; 
 struct Queue var_or_array_stack;
 struct Stack lineno_stack; 
 
@@ -63,6 +64,7 @@ int main( int argc, char * argv[] )
   FILE * linhas_iteracao;
   initStack(&name_stack);
   initStack(&number_stack);
+  initStack(&_Scope);
   initQueue(&var_or_array_stack);
   initStack(&lineno_stack);
 
