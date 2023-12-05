@@ -31,6 +31,7 @@
 
 /* code emitting utilities */
 
+void emitLabel( char * label); 
 /* Procedure emitComment prints a comment line 
  * with comment c in the code file
  */

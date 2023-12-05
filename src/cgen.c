@@ -29,6 +29,19 @@ static void genStmt( TreeNode * tree)
   int loc;
   switch (tree->kind.stmt) {
 
+      case VarDecK:
+         cGen(tree->child[0]);
+         break;
+
+      case FunDecK :
+         emitLabel(tree->child[0]->attr.name); //tree->attr.name
+                  p1 = tree->child[0];
+                  p2 = tree->child[1];
+                  /* do nothing for p1 */
+                  cGen(p2);
+               
+               break; /* decl_k */
+
       case IfK :
          if (TraceCode) emitComment("-> if") ;
          p1 = tree->child[0] ;
@@ -55,8 +68,8 @@ static void genStmt( TreeNode * tree)
          if (TraceCode)  emitComment("<- if") ;
          break; /* if_k */
 
-      //case RepeatK:
-         if (TraceCode) emitComment("-> repeat") ;
+      case WhileK:
+         if (TraceCode) emitComment("-> while") ;
          p1 = tree->child[0] ;
          p2 = tree->child[1] ;
          savedLoc1 = emitSkip(0);
@@ -118,7 +131,7 @@ static void genExp( TreeNode * tree)
       break; /* IdK */
 
     case OpK :
-         if (TraceCode) emitComment("-> Op") ;
+         //if (TraceCode) emitComment("-> Op") ;
          p1 = tree->child[0];
          p2 = tree->child[1];
          /* gen code for ac = left arg */
@@ -130,35 +143,18 @@ static void genExp( TreeNode * tree)
          /* now load left operand */
          emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
          switch (tree->attr.op) {
-            case PLUS :
-               emitRO("ADD",ac,ac1,ac,"op +");
-               break;
-            case MINUS :
-               emitRO("SUB",ac,ac1,ac,"op -");
-               break;
-            case TIMES :
-               emitRO("MUL",ac,ac1,ac,"op *");
-               break;
-            case OVER :
-               emitRO("DIV",ac,ac1,ac,"op /");
-               break;
-            case LT :
-               emitRO("SUB",ac,ac1,ac,"op <") ;
-               emitRM("JLT",ac,2,PC,"br if true") ;
-               emitRM("LDC",ac,0,ac,"false case") ;
-               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-               emitRM("LDC",ac,1,ac,"true case") ;
-               break;
-            case EQ :
-               emitRO("SUB",ac,ac1,ac,"op ==") ;
-               emitRM("JEQ",ac,2,PC,"br if true");
-               emitRM("LDC",ac,0,ac,"false case") ;
-               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-               emitRM("LDC",ac,1,ac,"true case") ;
-               break;
-            default:
-               emitComment("BUG: Unknown operator");
-               break;
+                        
+            case EQ:  pc(" =="); break;
+            case LT: pc(" <="); break;
+            case LE: pc(" <"); break;
+            case GT:  pc(" >"); break;
+            case GE:  pc(" !="); break;
+            case NE:  pc(" =="); break;
+            case PLUS: pc(" +"); break;
+            case COMMA: pc(" ,"); break;
+            case MINUS: pc(" -"); break;
+            case TIMES: pc(" *"); break;
+            case OVER: pc(" /"); break;
          } /* case op */
          if (TraceCode)  emitComment("<- Op") ;
          break; /* OpK */
@@ -202,16 +198,17 @@ void codeGen(TreeNode * syntaxTree)
    //char * s = malloc(strlen(codefile)+7);
    //strcpy(s,"File: ");
    //strcat(s,codefile);
-   emitComment("TINY Compilation to TM Code");
+   emitComment("C- Compilation to 3 Address Intermediate Code");
    //emitComment(s);
    /* generate standard prelude */
-   emitComment("Standard prelude:");
-   emitRM("LD",mp,0,ac,"load maxaddress from location 0");
-   emitRM("ST",ac,0,ac,"clear location 0");
-   emitComment("End of standard prelude.");
+   //emitComment("Standard prelude:");
+   //emitRM("LD",mp,0,ac,"load maxaddress from location 0");
+   //emitRM("ST",ac,0,ac,"clear location 0");
+   //emitComment("End of standard prelude.");
    /* generate code for TINY program */
    cGen(syntaxTree);
    /* finish */
-   emitComment("End of execution.");
-   emitRO("HALT",0,0,0,"");
+   emitComment("End of execution.\n");
+   emitComment("halt\n");
+   //emitRO("halt",0,0,0,"");
 }

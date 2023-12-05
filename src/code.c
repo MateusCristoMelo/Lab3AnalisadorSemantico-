@@ -17,6 +17,12 @@ static int emitLoc = 0 ;
    emitBackup, and emitRestore */
 static int highEmitLoc = 0;
 
+
+void emitLabel( char * label) 
+{   
+    pc("\n%10sTESTE:\n", label);
+} /* emitLabel */
+
 /* Procedure emitComment prints a comment line 
  * with comment c in the code file
  */
