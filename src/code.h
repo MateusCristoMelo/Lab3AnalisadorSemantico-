@@ -31,7 +31,10 @@
 
 /* code emitting utilities */
 
-void emitLabel( char * label); 
+void emitLabel( char * label);
+void emitReturn( int v);
+void emitHalt();
+void emitAssignInstruction(char *op, int r, int s, int t);
 /* Procedure emitComment prints a comment line 
  * with comment c in the code file
  */

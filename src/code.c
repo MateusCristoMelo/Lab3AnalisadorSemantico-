@@ -17,11 +17,32 @@ static int emitLoc = 0 ;
    emitBackup, and emitRestore */
 static int highEmitLoc = 0;
 
-
 void emitLabel( char * label) 
 {   
     pc("\n%10sTESTE:\n", label);
 } /* emitLabel */
+
+void emitHalt() 
+{   
+    pc("          halt\n");
+} /* emitLabel */
+
+void emitReturn(int v)
+{
+    pc("          return t%d", v);
+}
+
+
+/* Procedure emits not constant TM instruction
+ * op = the opcode
+ * r = target register
+ * s = 1st source register
+ * t = 2nd source register
+ */
+void emitAssignInstruction(char *op, int r, int s, int t)
+{
+    pc("          t%s = t%d %c t%d \n",r,s,op,t);
+}
 
 /* Procedure emitComment prints a comment line 
  * with comment c in the code file
@@ -38,7 +59,7 @@ void emitComment( char * c )
  * c = a comment to be printed if TraceCode is TRUE
  */
 void emitRO( char *op, int r, int s, int t, char *c)
-{ pc("%3d:  %5s  %d,%d,%d ",emitLoc++,op,r,s,t);
+{ pc("%3d:  %5s  t%d,t%d,t%d ",emitLoc++,op,r,s,t);
   if (TraceCode) pc("\t%s",c) ;
   pc("\n") ;
   if (highEmitLoc < emitLoc) highEmitLoc = emitLoc ;
@@ -53,7 +74,7 @@ void emitRO( char *op, int r, int s, int t, char *c)
  * c = a comment to be printed if TraceCode is TRUE
  */
 void emitRM( char * op, int r, int d, int s, char *c)
-{ pc("%3d:  %5s  %d,%d(%d) ",emitLoc++,op,r,d,s);
+{ pc("%3d:  %5s  t%d,%d(t%d) ",emitLoc++,op,r,d,s);
   if (TraceCode) pc("\t%s",c) ;
   pc("\n") ;
   if (highEmitLoc < emitLoc)  highEmitLoc = emitLoc ;
