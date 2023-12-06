@@ -31,6 +31,10 @@
 
 /* code emitting utilities */
 
+static int variableNumber = 0 ;
+static int branchLabelNumber = 0;
+char * getNewBranchLabel( void);
+void emitBranchInstruction(char* x,  char * L, int checkTrue); 
 void emitLabel( char * label);
 void emitReturn( int v);
 void emitHalt();

@@ -79,7 +79,7 @@ char* Val2Char(int value)
   return "void";
 }
 
-char *Scope = NULL;
+char *Scope = "";
 char *var_type= NULL;
 
 /* Procedure insertNode inserts 

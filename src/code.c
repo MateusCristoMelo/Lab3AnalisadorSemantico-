@@ -39,7 +39,68 @@ void emitReturn(int v)
  * s = 1st source register
  * t = 2nd source register
  */
+/*
+char * intToString(int val)
+{ char valString[11];
+  sprintf(valString, "%d", val);
+  return copyString(valString);
+}
 
+
+char * getNewBranchLabel( void) {
+    branchLabelNumber++;
+    char * branchLabelName;
+    branchLabelName = malloc(12);
+    char * labelNumberStr;
+    labelNumberStr = malloc(11);
+
+    labelNumberStr = intToString(branchLabelNumber);
+    
+    strcpy(branchLabelName,"L");
+    pc("%s", branchLabelName);
+    if (strlen(branchLabelName) + strlen(labelNumberStr) < sizeof(branchLabelName)) strcat(branchLabelName, labelNumberStr);
+    return branchLabelName;
+}*/
+
+char* intToString(int num) {
+    char* str = (char*)malloc(12); // Ajuste o tamanho conforme necessário
+    snprintf(str, 12, "%d", num);
+    return str;
+}
+
+// Função principal para obter um novo rótulo de ramificação
+char* getNewBranchLabel(void) {
+    branchLabelNumber++;
+    
+    // Alocar memória para o nome da ramificação e o número da ramificação
+    char* branchLabelName = (char*)malloc(12); // Ajuste o tamanho conforme necessário
+    char* labelNumberStr = intToString(branchLabelNumber);
+
+    // Construir o rótulo da ramificação
+    strcpy(branchLabelName, "L");
+    strcat(branchLabelName, labelNumberStr);
+
+    // Imprimir para verificar se está correto (opcional)
+    //printf("%s\n", branchLabelName);
+
+    // Liberar a memória alocada para o número da ramificação
+    free(labelNumberStr);
+
+    // Retornar o rótulo da ramificação
+    return branchLabelName;
+}
+
+
+void emitBranchInstruction(char* x,  char * L, int checkTrue)
+{   if (strlen(x) == 0) {
+        pc("          goto %s\n", L);
+    } else {
+        if(checkTrue)
+            pc("          if_true %s goto %s\n", x, L);
+        else
+            pc("          if_false %s goto %s\n", x, L);
+    }
+} 
 
 void emitAssignInstruction( char *op, char* r, char* s, char* t) 
 {   if (strlen(op) == 0 && strlen(t) == 0) {
