@@ -98,19 +98,20 @@ static void insertNode(TreeNode * t) //alterar essa
           // pc("\n\n%s (0) CHAMA INSERT\n\n", t->child[0]->attr.name);
           
           if (st_lookup(t->child[0]->attr.name, Scope) == -1){  
-            if (st_lookup(t->child[0]->attr.name, "") == -1){
-              st_insert(t->child[0]->attr.name, t->child[0]->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), Token2Char(t->attr.op));
-            } else {
-              if (!strcmp(id_lookup(t->child[0]->attr.name, ""), "var")) {
+            if (st_lookup(t->child[0]->attr.name, "") != -1){
+              if (!id_lookup(t->child[0]->attr.name, "", "var")) {
                 typeError(t->child[0], "was already declared as a variable");
-              } else {
-                typeError(t->child[0], "was already declared as a function");
+                t->child[0]->attr.name = NULL;
               }
-              t->child[0]->attr.name = NULL;
+              if (!id_lookup(t->child[0]->attr.name, "", "fun")) {
+                typeError(t->child[0], "was already declared as a function");
+                t->child[0]->attr.name = NULL;
+              }              
             }
+            st_insert(t->child[0]->attr.name, t->child[0]->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), Token2Char(t->attr.op));
             
           } else {            
-            if (!strcmp(id_lookup(t->child[0]->attr.name, Scope), "var")) {
+            if (!id_lookup(t->child[0]->attr.name, Scope, "var")) {
                 typeError(t->child[0], "was already declared as a variable");
               } else {
                 typeError(t->child[0], "was already declared as a function");
@@ -173,14 +174,31 @@ static void insertNode(TreeNode * t) //alterar essa
           }
           if ((st_lookup(t->attr.name, Scope) == -1)) {
             /* not yet in table, so treat as new definition */
+            // AQUI TA DANDO SEG FAULT ----------------------------------------------------------------------------------------
             // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
-            typeError(t,"was not declared in this scope");
+            // pc("\n\nAAAA: %s\n\n", t->attr.name);
+            // pc("\n\nVAR: %d\n\n", id_lookup(t->attr.name, "", "var"));
+            // pc("\n\nARRAY: %d\n\n", id_lookup(t->attr.name, "", "array"));
+            // if (id_lookup(t->attr.name, "", "var")==0) {
+              
+            //   st_insert(t->attr.name, t->lineno, 0, "", "var", type_lookup(t->attr.name, ""));
+                
+            // } else if (id_lookup(t->attr.name, "", "array")==0) {
+
+            //   // pc("\n\nARRAY DETECTED\n\n");
+            //   st_insert(t->attr.name, t->lineno, 0, "", "array", type_lookup(t->attr.name, ""));
+
+            // } else {
+
+              typeError(t,"was not declared in this scope");
+            
+            // }
             // st_insert(t->attr.name, t->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), var_type);
           } else {
             /* already in table, so ignore location, 
               add line number of use only */
             // pc("\n\n%s (6) CHAMA INSERT NA LINHA %d\n\n", t->attr.name, t->lineno);
-            st_insert(t->attr.name, t->lineno, 0, Scope , "", "");
+            st_insert(t->attr.name, t->lineno, 0, Scope, "", "");
           }
           break;
 

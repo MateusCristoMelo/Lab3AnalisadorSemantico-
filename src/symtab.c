@@ -155,21 +155,21 @@ int st_lookup ( char * name, char * scope)
   else return l->memloc;
 }
 
-char* id_lookup(char * name, char * scope)
+int id_lookup(char * name, char * scope, char * id)
 {
-  if (name == NULL) return " ";
+  if (name == NULL) return -1;
   int h = hash(name);
   BucketList l =  hashTable[h];
   while (l != NULL)
   {
-    if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0))
+    if((strcmp(name,l->name) == 0) && (strcmp(scope,l->scope) == 0) && (strcmp(id,l->id_type) == 0))
     {
       break;
     }
     l = l->next;
   }
-  if (l == NULL) return " ";
-  else return l->id_type;
+  if (l == NULL) return -1;
+  else return 0;
 }
 
 char* type_lookup(char * name, char * scope)
