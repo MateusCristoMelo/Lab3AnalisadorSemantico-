@@ -245,7 +245,7 @@ void printTree( TreeNode * tree )
         case WhileK: pc("While\n"); break;
         case AssignK: pc("Assign:\n"); break;
         case ReturnK: pc("Return\n"); break;
-        case CallK: pc("Activation: %s\n", tree->attr.name); /*printTokenSyn(tree->attr.name,"\0"); */break;
+        case CallK: pc("Activation: %s\n", tree->child[0]->attr.data.name); /*printTokenSyn(tree->attr.data.name,"\0"); */break;
         case VarDecK: pc("Type: ");printTokenSyn(tree->attr.op,"\0"); break;
         case FunDecK: pc("Type: ");printTokenSyn(tree->attr.op,"\0"); break;
         default: pc("Unknown ExpNode kind\n"); break;
@@ -255,7 +255,7 @@ void printTree( TreeNode * tree )
     { switch (tree->kind.exp) {
         case OpK: pc("Op: "); printTokenSyn(tree->attr.op,"\0"); break;
         case ConstK: pc("Const: %d\n",tree->attr.val); break;
-        case IdK: if(tree->attr.name != NULL) pc("Id: %s\n",tree->attr.name); break;
+        case IdK: if(tree->attr.data.name != NULL && tree->attr.data.type == NULL) pc("Id: %s\n",tree->attr.data.name); break;
         default: pc("Unknown ExpNode kind\n"); break;
       }
     }

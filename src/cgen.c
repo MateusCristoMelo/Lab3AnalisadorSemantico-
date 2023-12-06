@@ -34,13 +34,13 @@ static void genStmt( TreeNode * tree)
   switch (tree->kind.stmt) {
 
       case VarDecK:
-      //emitLabel(tree->child[0]->attr.name);
+      //emitLabel(tree->child[0]->attr.data.name);
          cGen(tree->child[0]); //leva pro node idk
          break;
 
       case FunDecK :
-         ScopeNow = tree->child[0]->attr.name;
-         emitLabel(tree->child[0]->attr.name); //tree->attr.name
+         ScopeNow = tree->child[0]->attr.data.name;
+         emitLabel(tree->child[0]->attr.data.name); //tree->attr.data.name
                   //p1 = tree->child[0]->child[0];
                   p2 = tree->child[0]->child[1];
                   /* do nothing for p1 */
@@ -113,7 +113,7 @@ static void genStmt( TreeNode * tree)
          /* generate code for rhs */
          cGen(p1);
          /* now store value */
-         loc = st_lookup(tree->attr.name, ScopeNow);
+         loc = st_lookup(tree->attr.data.name, ScopeNow);
          //emitRM("ST",ac,loc,gp,"assign: store value");
          cGen(p2);
          emitAssignInstruction("", "reg1", "reg2", "");
@@ -140,7 +140,7 @@ static void genStmt( TreeNode * tree)
                emitParamInstruction("reg/var");
                p1 = p1->sibling;
          }
-         emitCallInstruction("nomeReg", tree->attr.name, countParams);
+         emitCallInstruction("nomeReg", tree->attr.data.name, countParams);
          //t1 = getNewVariable();
 
       default:
@@ -171,8 +171,8 @@ static void genExp( TreeNode * tree)
     
     case IdK :
       if (TraceCode) emitComment("-> Id") ;
-      loc = st_lookup(tree->attr.name, ScopeNow);
-      //pc("Nome variavel %c", tree->attr.name);
+      loc = st_lookup(tree->attr.data.name, ScopeNow);
+      //pc("Nome variavel %c", tree->attr.data.name);
       p1 = tree->child[0];
       (p1);
       //emitRM("LD",ac,loc,gp,"load id value");

@@ -54,7 +54,7 @@ static void typeError(TreeNode * t, char * message)
   else if(!strcmp(message, "was not declared in this scope") || !strcmp(message, "was already declared as a variable") || !strcmp(message, "was already declared as a function")) 
   {
     TraceAnalyze = FALSE;
-    pce("Semantic error at line %d: '%s' %s\n",t->lineno, t->attr.name, message);
+    pce("Semantic error at line %d: '%s' %s\n",t->lineno, t->attr.data.name, message);
   }
   else
   {
@@ -94,68 +94,68 @@ static void insertNode(TreeNode * t) //alterar essa
       switch (t->kind.stmt)
       { 
         case VarDecK: 
-          // pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->child[0]->attr.name));
-          // pc("\n\n%s (0) CHAMA INSERT\n\n", t->child[0]->attr.name);
+          // pc("\n\n%s VarDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->child[0]->attr.data.name));
+          // pc("\n\n%s (0) CHAMA INSERT\n\n", t->child[0]->attr.data.name);
           
-          if (st_lookup(t->child[0]->attr.name, Scope) == -1){  
-            if (st_lookup(t->child[0]->attr.name, "") != -1){
-              if (!id_lookup(t->child[0]->attr.name, "", "var")) {
+          if (st_lookup(t->child[0]->attr.data.name, Scope) == -1){  
+            if (st_lookup(t->child[0]->attr.data.name, "") != -1){
+              if (!id_lookup(t->child[0]->attr.data.name, "", "var")) {
                 typeError(t->child[0], "was already declared as a variable");
-                t->child[0]->attr.name = NULL;
+                t->child[0]->attr.data.name = NULL;
               }
-              if (!id_lookup(t->child[0]->attr.name, "", "fun")) {
+              if (!id_lookup(t->child[0]->attr.data.name, "", "fun")) {
                 typeError(t->child[0], "was already declared as a function");
-                t->child[0]->attr.name = NULL;
+                t->child[0]->attr.data.name = NULL;
               }              
             }
-            st_insert(t->child[0]->attr.name, t->child[0]->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), Token2Char(t->attr.op));
+            st_insert(t->child[0]->attr.data.name, t->child[0]->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), Token2Char(t->attr.op));
             
           } else {            
-            if (!id_lookup(t->child[0]->attr.name, Scope, "var")) {
+            if (!id_lookup(t->child[0]->attr.data.name, Scope, "var")) {
                 typeError(t->child[0], "was already declared as a variable");
               } else {
                 typeError(t->child[0], "was already declared as a function");
               }
-            t->child[0]->attr.name = NULL;
+            t->child[0]->attr.data.name = NULL;
           }
           break; //tratado em idk
 
         case FunDecK:
-          // pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
-          if (st_lookup(t->child[0]->attr.name, "") == -1){
+          // pc("\n\n%s FunDecK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.data.name));
+          if (st_lookup(t->child[0]->attr.data.name, "") == -1){
             /* not yet in table, so treat as new definition */
-            Scope = t->child[0]->attr.name;
+            Scope = t->child[0]->attr.data.name;
             push(&_Scope, Scope);
-            // if(!strcmp(t->child[0]->attr.name, "main")) {
+            // if(!strcmp(t->child[0]->attr.data.name, "main")) {
             //   pc("\n\nFLAG\n\nLINE PARENT: %d\nLINE CHILD: %d\n\n", t->child[0]->lineno,t->lineno);
             // }
-            // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.name);
-            st_insert(t->child[0]->attr.name, t->child[0]->lineno, location++, "" , "fun", Token2Char(t->attr.op));
+            // pc("\n\n%s (1) CHAMA INSERT\n\n", t->child[0]->attr.data.name);
+            st_insert(t->child[0]->attr.data.name, t->child[0]->lineno, location++, "" , "fun", Token2Char(t->attr.op));
           } else {
             /* already in table, so ignore location, 
             add line number of use only */ 
-            // pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.name);
-            // st_insert(t->child[0]->attr.name, t->child[0]->lineno, 0, "" , "", "");
+            // pc("\n\n%s (2) CHAMA INSERT\n\n", t->child[0]->attr.data.name);
+            // st_insert(t->child[0]->attr.data.name, t->child[0]->lineno, 0, "" , "", "");
             typeError(t->child[0], "was already declared as a function");
-            t->child[0]->attr.name = NULL;
+            t->child[0]->attr.data.name = NULL;
           }
           break;
 
         case CallK:
-          // pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
-          if (st_lookup(t->attr.name, "") == -1) {
+          // pc("\n\n%s CallK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.data.name));
+          if (st_lookup(t->child[0]->attr.data.name, "") == -1 && t->child[0]->attr.data.type == NULL) {
             /* not yet in table, so treat as new definition */
-              //Scope = t->attr.name;
+              //Scope = t->attr.data.name;
               // pc("OI");
-              // pc("\n\n%s (3) CHAMA INSERT NA LINHA %d\n\n", t->attr.name, t->lineno);
+              // pc("\n\n%s (3) CHAMA INSERT NA LINHA %d\n\n", t->attr.data.name, t->lineno);
               typeError(t,"was not declared in this scope");
-              // t->attr.name = NULL;
-              // st_insert(t->attr.name, t->lineno, location++, "" , "fun", "int");
+              // t->attr.data.name = NULL;
+              // st_insert(t->attr.data.name, t->lineno, location++, "" , "fun", "int");
             } else {
               /* already in table, so ignore location, 
               add line number of use only */
-              // pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.name);
-              st_insert(t->attr.name, t->lineno, 0, "" , "", "");
+              // pc("\n\n%s (4) CHAMA INSERT\n\n", t->attr.data.name);
+              st_insert(t->child[0]->attr.data.name, t->lineno, 0, "" , "", "");
             }
           break;
 
@@ -164,41 +164,43 @@ static void insertNode(TreeNode * t) //alterar essa
       }
       break;
     case ExpK:
-      // pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.name));
+      // pc("\n\n%s ExpK xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n", copyString(t->attr.data.name));
       switch (t->kind.exp)
       { 
         case IdK:
-          // pc("My ID is %s\n", t->attr.name);
-          if(Scope == t->attr.name || t->attr.name == NULL) {
+          // pc("My ID is %s\n", t->attr.data.name);
+          if(Scope == t->attr.data.name || t->attr.data.name == NULL) {
             break;
           }
-          if ((st_lookup(t->attr.name, Scope) == -1)) {
+          if ((st_lookup(t->attr.data.name, Scope) == -1)) {
             /* not yet in table, so treat as new definition */
             // AQUI TA DANDO SEG FAULT ----------------------------------------------------------------------------------------
-            // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.name);
-            // pc("\n\nAAAA: %s\n\n", t->attr.name);
-            // pc("\n\nVAR: %d\n\n", id_lookup(t->attr.name, "", "var"));
-            // pc("\n\nARRAY: %d\n\n", id_lookup(t->attr.name, "", "array"));
-            // if (id_lookup(t->attr.name, "", "var")==0) {
+            // pc("\n\n%s (5) CHAMA INSERT\n\n", t->attr.data.name);
+            // pc("\n\nAAAA: %s\n\n", t->attr.data.name);
+            // pc("\n\nVAR: %d\n\n", id_lookup(t->attr.data.name, "", "var"));
+            // pc("\n\nARRAY: %d\n\n", id_lookup(t->attr.data.name, "", "array"));
+             if (id_lookup(t->attr.data.name, "", "var")==0) {
               
-            //   st_insert(t->attr.name, t->lineno, 0, "", "var", type_lookup(t->attr.name, ""));
+               st_insert(t->attr.data.name, t->lineno, 0, "", "var", type_lookup(t->attr.data.name, ""));
                 
-            // } else if (id_lookup(t->attr.name, "", "array")==0) {
+             } else if (id_lookup(t->attr.data.name, "", "array")==0) {
 
-            //   // pc("\n\nARRAY DETECTED\n\n");
-            //   st_insert(t->attr.name, t->lineno, 0, "", "array", type_lookup(t->attr.name, ""));
+                pc("\n\nARRAY DETECTED\n\n");
+                //typeError(t,"deu ruim");
+               st_insert(t->attr.data.name, t->lineno, 0, "", "array", type_lookup(t->attr.data.name, ""));
 
-            // } else {
+             } 
+             else {
 
               typeError(t,"was not declared in this scope");
             
-            // }
-            // st_insert(t->attr.name, t->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), var_type);
+             }
+            // st_insert(t->attr.data.name, t->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), var_type);
           } else {
             /* already in table, so ignore location, 
               add line number of use only */
-            // pc("\n\n%s (6) CHAMA INSERT NA LINHA %d\n\n", t->attr.name, t->lineno);
-            st_insert(t->attr.name, t->lineno, 0, Scope, "", "");
+            // pc("\n\n%s (6) CHAMA INSERT NA LINHA %d\n\n", t->attr.data.name, t->lineno);
+            st_insert(t->attr.data.name, t->lineno, 0, Scope, "", "");
           }
           break;
 
@@ -249,7 +251,7 @@ void buildSymtab(TreeNode * syntaxTree)
 //       case WhileK: pc("While\n"); break;
 //       case AssignK: pc("Assign:\n"); break;
 //       case ReturnK: pc("Return\n"); break;
-//       case CallK: pc("Activation: %s\n", tree->attr.name); /*printTokenSyn(tree->attr.name,"\0"); */break;
+//       case CallK: pc("Activation: %s\n", tree->attr.data.name); /*printTokenSyn(tree->attr.data.name,"\0"); */break;
 //       case VarDecK: pc("Type: ");printTokenSyn(tree->attr.op,"\0"); break;
 //       case FunDecK: pc("Type: ");printTokenSyn(tree->attr.op,"\0"); break;
 //       default: pc("Unknown ExpNode kind\n"); break;
@@ -259,7 +261,7 @@ void buildSymtab(TreeNode * syntaxTree)
 //   { switch (tree->kind.exp) {
 //       case OpK: pc("Op: "); printTokenSyn(tree->attr.op,"\0"); break;
 //       case ConstK: pc("Const: %d\n",tree->attr.val); break;
-//       case IdK: if(tree->attr.name != NULL) pc("Id: %s\n",tree->attr.name); break;
+//       case IdK: if(tree->attr.data.name != NULL) pc("Id: %s\n",tree->attr.data.name); break;
 //       default: pc("Unknown ExpNode kind\n"); break;
 //     }
 //   }
@@ -299,12 +301,12 @@ static void checkNode(TreeNode * t) //alterar essa
           break;
         case AssignK:
           if (t->child[1]->kind.stmt == CallK) {
-            // pc("\n\nFIRST: %s \n\n", t->child[0]->attr.name);
-            // pc("\n\nSECOND: %s \n\n", t->child[1]->attr.name);
+            // pc("\n\nFIRST: %s \n\n", t->child[0]->attr.data.name);
+            // pc("\n\nSECOND: %s \n\n", t->child[1]->attr.data.name);
             // pc("\n\nSECOND: %s \n\n", t->child[1]->attr.op);
             // pc("\n\nCALL NO SCOPE: %s \n\n", Scope);
-            // pc("\n\n%s %s\n\n", t->child[1]->attr.name, Scope);
-            if (!strcmp(type_lookup(t->child[1]->attr.name, ""), "void")) {
+            // pc("\n\n%s %s\n\n", t->child[1]->attr.data.name, Scope);
+            if (!strcmp(type_lookup(t->child[1]->attr.data.name, ""), "void")) {
               typeError(t, "invalid use of void expression");
             }
           }
@@ -327,11 +329,11 @@ static void checkNode(TreeNode * t) //alterar essa
               typeError(t->child[0], "variable declared void");
             }
           }
-          // if (!strcmp(id_lookup(t->child[0]->attr.name, ""), "var")) {
+          // if (!strcmp(id_lookup(t->child[0]->attr.data.name, ""), "var")) {
           //   pc("\n\nVARIAVEL %s DECLARADA NO ESCOPO %s\n\n", t->child[0], Scope);
           // }
             // pc("\n\nVARIAVEL %s DECLARADA NO ESCOPO %s\n\n", t->child[0], Scope);
-          // if (!strcmp(type_lookup(t->child[0]->attr.name, Scope), "void")) {
+          // if (!strcmp(type_lookup(t->child[0]->attr.data.name, Scope), "void")) {
           //   typeError(t->child[0], "variable declared void");
           // }
           // if (t->attr.op == Void) {
@@ -347,8 +349,8 @@ static void checkNode(TreeNode * t) //alterar essa
             pop(&_Scope);
           }
           // pc("Novo SCOPE: %s\n\n", Scope);
-          // if (t->child[0]->attr.name != NULL) {
-          //   if (t->child[0]->attr.name == "main") {
+          // if (t->child[0]->attr.data.name != NULL) {
+          //   if (t->child[0]->attr.data.name == "main") {
           //       hasMain = 1;  // Marcar que a função main foi encontrada
           //   }
           // }

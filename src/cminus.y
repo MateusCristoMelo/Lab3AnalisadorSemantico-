@@ -66,7 +66,7 @@ var_declaracao:
         $$->child[0] = newExpNode(IdK);
         
         char *poppedStr = (char *)pop(&name_stack);
-        $$->child[0]->attr.name = copyString(poppedStr);
+        $$->child[0]->attr.data.name = copyString(poppedStr);
         char *poppedLin = (char *)pop(&lineno_stack);
         $$->child[0]->lineno = atoi(copyString(poppedLin));
         free(poppedLin);
@@ -80,7 +80,7 @@ var_declaracao:
         $$->child[0] = newExpNode(IdK);
         enqueue(&var_or_array_stack, "array"); 
         char *poppedStr = (char *)pop(&name_stack);
-        $$->child[0]->attr.name = copyString(poppedStr);
+        $$->child[0]->attr.data.name = copyString(poppedStr);
         char *poppedLin = (char *)pop(&lineno_stack);
         $$->child[0]->lineno = atoi(copyString(poppedLin));
         free(poppedLin);
@@ -105,7 +105,7 @@ fun_declaracao:
                                                                           $$->attr.op = (TokenType)(intptr_t)$1;
                                                                           $$->child[0] = newExpNode(IdK);
                                                                           char *poppedStr = (char *)pop(&name_stack);
-                                                                          $$->child[0]->attr.name = copyString(poppedStr);  
+                                                                          $$->child[0]->attr.data.name = copyString(poppedStr);  
                                                                           char *poppedLin = (char *)pop(&lineno_stack);
                                                                           $$->child[0]->lineno = atoi(copyString(poppedLin));
                                                                           free(poppedLin);
@@ -138,7 +138,7 @@ param:
 			                $$->child[0] = newExpNode(IdK);
                       enqueue(&var_or_array_stack, "var");
                       char *poppedStr = (char *)pop(&name_stack);
-                      $$->child[0]->attr.name = copyString(poppedStr);
+                      $$->child[0]->attr.data.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
                       $$->child[0]->lineno = atoi(copyString(poppedLin));
                       free(poppedLin);
@@ -149,7 +149,7 @@ param:
 			                $$->child[0] = newExpNode(IdK);
                       enqueue(&var_or_array_stack, "array"); 
                       char *poppedStr = (char *)pop(&name_stack);
-                      $$->child[0]->attr.name = copyString(poppedStr);
+                      $$->child[0]->attr.data.name = copyString(poppedStr);
                       char *poppedLin = (char *)pop(&lineno_stack);
                       $$->child[0]->lineno = atoi(copyString(poppedLin));
                       free(poppedLin);
@@ -238,7 +238,7 @@ var :
       ID {
           $$ = newExpNode(IdK);
           char *poppedStr = (char *)pop(&name_stack);
-          $$->attr.name = copyString(poppedStr);
+          $$->attr.data.name = copyString(poppedStr);
           char *poppedLin = (char *)pop(&lineno_stack);
           $$->lineno = atoi(copyString(poppedLin)); 
           free(poppedLin);
@@ -246,7 +246,7 @@ var :
 |     ID LBRACKET expressao RBRACKET { 
           $$ = newExpNode(IdK);
           char *poppedStr = (char *)pop(&name_stack);
-          $$->attr.name = copyString(poppedStr);
+          $$->attr.data.name = copyString(poppedStr);
           char *poppedLin = (char *)pop(&lineno_stack);
           $$->lineno = atoi(copyString(poppedLin));
           free(poppedLin);
@@ -309,12 +309,13 @@ ativacao :
             $$ = newStmtNode(CallK);
             $$->child[0] = newExpNode(IdK);
             char *poppedStr = (char *)pop(&name_stack);
-            $$->child[0]->attr.name = NULL;
-            $$->attr.name = copyString(poppedStr);
+            $$->child[0]->attr.data.name = copyString(poppedStr);
+            $$->child[0]->attr.data.type = copyString("Call"); 
+            //$$->attr.data.name = copyString(poppedStr);
             char *poppedLin = (char *)pop(&lineno_stack);
             $$->lineno = atoi(copyString(poppedLin));
             free(poppedLin);
-            enqueue(&var_or_array_stack, "var"); 
+            //enqueue(&var_or_array_stack, "var"); 
             $$->child[1] = $3;
             
           }
