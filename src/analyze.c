@@ -108,6 +108,12 @@ static void insertNode(TreeNode * t) //alterar essa
                 t->child[0]->attr.data.name = NULL;
               }              
             }
+            // if(!strcmp(t->child[0]->attr.data.type, "array")) {
+            //   if(t->child[0]->child[0] != NULL) {
+            //     // pc("\n\nAAAAAAAAAAAAAAAA %d -> %s\n\n", t->child[0]->lineno, t->child[0]->attr.data.name);
+            //     location = location + t->child[0]->child[0]->attr.val;
+            //   }
+            // }
             st_insert(t->child[0]->attr.data.name, t->child[0]->lineno, location++, Scope, t->child[0]->attr.data.type, Token2Char(t->attr.op));
             
           } else {            
