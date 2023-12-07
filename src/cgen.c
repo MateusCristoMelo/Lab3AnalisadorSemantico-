@@ -111,13 +111,17 @@ static void genStmt( TreeNode * tree)
          p1 = tree->child[0] ;
          p2 = tree->child[1] ;
          /* generate code for rhs */
-         cGen(p1);
+         cGen(p2);
          /* now store value */
-         loc = st_lookup(tree->attr.data.name, ScopeNow);
+         // loc = st_lookup(tree->attr.data.name, ScopeNow);
+         // pc("\nAAA\n");
+         // emitRM("ST",ac,loc,gp,"assign: store value");
+
+         // cGen(p1);
+         loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
+         // pc("\nBBB\n");
          emitRM("ST",ac,loc,gp,"assign: store value");
-         if(p2 != NULL) {cGen(p2);
-         loc = st_lookup(tree->attr.data.name, ScopeNow);
-         emitRM("ST",ac,loc,gp,"assign: store value");}
+
          //emitAssignInstruction("", "reg1", "reg2", "");
          if (TraceCode)  emitComment("<- assign") ;
          break; /* assign_k */
@@ -166,6 +170,7 @@ static void genExp( TreeNode * tree)
       case ConstK ://OK
          //emitLabelInt(tree->attr.val);
          if (TraceCode) emitComment("-> Const") ;
+         // pc("\n\nCONST\n\n");
          /* gen code to load integer constant using LDC */
          emitRM("LDC",ac,tree->attr.val,0,"load const");
          if (TraceCode)  emitComment("<- Const") ;
@@ -174,7 +179,7 @@ static void genExp( TreeNode * tree)
       case IdK : //OK
          if (TraceCode) emitComment("-> Id") ;
          loc = st_lookup(tree->attr.data.name, ScopeNow);
-         //pc("Nome variavel %c", tree->attr.data.name);
+         // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
          // if(!strcmp(tree->attr.data.type, "array")){
          //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
          // }
