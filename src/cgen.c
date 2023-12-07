@@ -264,22 +264,23 @@ static void cGen( TreeNode * tree)
  * of the code file, and is used to print the
  * file name as a comment in the code file
  */
-void codeGen(TreeNode * syntaxTree)
-{  
-   //char * s = malloc(strlen(codefile)+7);
-   //strcpy(s,"File: ");
-   //strcat(s,codefile);
+
+
+void codeGen(TreeNode * syntaxTree, char * codefile)
+{  char * s = malloc(strlen(codefile)+7);
+   strcpy(s,"File: ");
+   strcat(s,codefile);
    emitComment("C- Compilation to 3 Address Intermediate Code");
    //emitComment(s);
    /* generate standard prelude */
    //emitComment("Standard prelude:");
-   //emitRM("LD",mp,0,ac,"load maxaddress from location 0");
-   //emitRM("ST",ac,0,ac,"clear location 0");
+   emitRM("LD",mp,0,ac,"load maxaddress from location 0");
+   emitRM("ST",ac,0,ac,"clear location 0");
    //emitComment("End of standard prelude.");
    /* generate code for TINY program */
    cGen(syntaxTree);
    /* finish */
-   emitComment("End of execution.\n");
+   emitComment("End of execution.");
    emitHalt() ;
-   //emitRO("halt",0,0,0,"");
+   emitRO("HALT",0,0,0,"");
 }

@@ -11,6 +11,6 @@
 /* Procedure codeGen generates code to a code
  * file by traversal of the syntax tree. 
  */
-void codeGen(TreeNode * syntaxTree);
+void codeGen(TreeNode * syntaxTree, char * codefile);
 
 #endif
