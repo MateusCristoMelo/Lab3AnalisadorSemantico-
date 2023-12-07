@@ -10,12 +10,12 @@
 #define _CODE_H_
 
 /* pc = program counter  */
-#define  PC 7
+#define PC 7
 
 /* mp = "memory pointer" points
  * to top of memory (for temp storage)
  */
-#define  mp 6
+#define mp 6
 
 /* gp = "global pointer" points
  * to bottom of memory for (global)
@@ -24,10 +24,10 @@
 #define gp 5
 
 /* accumulator */
-#define  ac 0
+#define ac 0
 
 /* 2nd accumulator */
-#define  ac1 1
+#define ac1 1
 
 /* code emitting utilities */
 

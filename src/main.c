@@ -48,7 +48,7 @@ int EchoSource = FALSE;
 int TraceScan = TRUE;
 int TraceParse = TRUE;
 int TraceAnalyze = TRUE;
-int TraceCode = FALSE;
+int TraceCode = TRUE;
 
 int Error = FALSE;
 
@@ -127,19 +127,29 @@ int main( int argc, char * argv[] )
     typeCheck(syntaxTree);
     if (TraceAnalyze) fprintf(listing,"\nSemantic analysis finished\n");
   }
+  
 #if !NO_CODE
-  if (! Error)
-  { char * codefile;
-    int fnlen = strcspn(pgm,".");
-    codefile = (char *) calloc(fnlen+4, sizeof(char));
-    strncpy(codefile,pgm,fnlen);
-    strcat(codefile,".tm");
-    code = fopen(codefile,"w");
+doneTABstartGEN();
+  if (!Error)
+  {
+    char *codefile;
+    int fnlen = strcspn(pgm + 2, ".") + 2;
+    codefile = (char *)calloc(fnlen + 4, sizeof(char));
+
+    pc("program: %s\n", pgm);
+
+    strncpy(codefile, pgm, fnlen);
+    pc("code file: %s\n", codefile);
+    strcat(codefile, ".tm");
+
+    pc("%s", codefile);
+    code = fopen(codefile, "w");
     if (code == NULL)
-    { printf("Unable to open %s\n",codefile);
+    {
+      printf("Unable to open %s\n", codefile);
       exit(1);
     }
-    codeGen(syntaxTree,codefile);
+    codeGen(syntaxTree, codefile);
     fclose(code);
   }
 #endif
