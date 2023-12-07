@@ -174,27 +174,27 @@ static void insertNode(TreeNode * t) //alterar essa
           }
           if (st_lookup(t->attr.data.name, Scope) == -1) {
             /* not yet in table, so treat as new definition */
-          if (st_lookup(t->attr.data.name, "") == -1) {
+            if (st_lookup(t->attr.data.name, "") == -1) {
 
-            // pc("\nPASSA NA VERDADE AQUI %d\n", t->lineno);
-            typeError(t,"was not declared in this scope");
-
-          } else {
-            
-            if (!strcmp(t->attr.data.type, "call")) {
-
-              st_insert(t->attr.data.name, t->lineno, 0, "", "fun", type_lookup(t->attr.data.name, ""));
-
-            } else if (!strcmp(t->attr.data.type, "var") || !strcmp(t->attr.data.type, "array")) {
-
-              st_insert(t->attr.data.name, t->lineno, 0, "", t->attr.data.type, type_lookup(t->attr.data.name, ""));
+              // pc("\nPASSA NA VERDADE AQUI %d\n", t->lineno);
+              typeError(t,"was not declared in this scope");
 
             } else {
-              // pc("\nPASSA AQUI, LINHA %d\n", t->lineno);
-              typeError(t,"was not declared in this scope");
+              
+              if (!strcmp(t->attr.data.type, "call")) {
+
+                st_insert(t->attr.data.name, t->lineno, 0, "", "fun", type_lookup(t->attr.data.name, ""));
+
+              } else if (!strcmp(t->attr.data.type, "var") || !strcmp(t->attr.data.type, "array")) {
+
+                st_insert(t->attr.data.name, t->lineno, 0, "", t->attr.data.type, type_lookup(t->attr.data.name, ""));
+
+              } else {
+                // pc("\nPASSA AQUI, LINHA %d\n", t->lineno);
+                typeError(t,"was not declared in this scope");
+              }
+              // typeError(t,"ERRO");
             }
-            // typeError(t,"ERRO");
-          }
             // st_insert(t->attr.data.name, t->lineno, location++, Scope, (char*)dequeue(&var_or_array_stack), var_type);
           } else {
             /* already in table, so ignore location, 

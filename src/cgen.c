@@ -17,7 +17,7 @@
    stored, and incremeted when loaded again
 */
 static int tmpOffset = 0;
-static char * ScopeNow;
+static char * ScopeNow = "";
 
 /* prototype for internal recursive code generator */
 static void cGen (TreeNode * tree);
@@ -114,12 +114,16 @@ static void genStmt( TreeNode * tree)
          cGen(p2);
          /* now store value */
          // loc = st_lookup(tree->attr.data.name, ScopeNow);
-         // pc("\nAAA\n");
          // emitRM("ST",ac,loc,gp,"assign: store value");
 
          // cGen(p1);
-         loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
-         // pc("\nBBB\n");
+         if(strcmp(tree->child[0]->attr.data.type, "array")) {
+            loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
+            // arranjar um jeito de puxar o id
+         } else {
+            loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
+         }
+
          emitRM("ST",ac,loc,gp,"assign: store value");
 
          //emitAssignInstruction("", "reg1", "reg2", "");
@@ -179,6 +183,9 @@ static void genExp( TreeNode * tree)
       case IdK : //OK
          if (TraceCode) emitComment("-> Id") ;
          loc = st_lookup(tree->attr.data.name, ScopeNow);
+         if(loc == -1) {
+            loc = st_lookup(tree->attr.data.name, "");
+         }
          // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
          // if(!strcmp(tree->attr.data.type, "array")){
          //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
