@@ -48,7 +48,7 @@ int EchoSource = FALSE;
 int TraceScan = TRUE;
 int TraceParse = TRUE;
 int TraceAnalyze = TRUE;
-int TraceCode = false;
+int TraceCode = TRUE;
 
 int Error = FALSE;
 
@@ -120,7 +120,8 @@ int main( int argc, char * argv[] )
 #if !NO_ANALYZE
   doneSYNstartTAB();
   if (! Error)
-  { if (TraceAnalyze) fprintf(listing,"\nBuilding Symbol Table...\n");
+  { 
+    if (TraceAnalyze) fprintf(listing,"\nBuilding Symbol Table...\n");
     buildSymtab(syntaxTree);
     if (TraceAnalyze) fprintf(listing,"\nChecking types...\n");
     typeCheck(syntaxTree);
@@ -139,4 +140,3 @@ int main( int argc, char * argv[] )
   closePrinter();
   return 0;
 }
-

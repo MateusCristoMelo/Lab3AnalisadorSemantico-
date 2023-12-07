@@ -140,7 +140,7 @@ int st_lookup ( char * name, char * scope)
   //pc("\n\nSTRING: %s --------------------------------------------------------------\n\n", name);
   if (name == NULL) return -1;
   int h = hash(name);
-  //pc("\n\nHASH: %d\n", h);
+  // pc("\n\nHASH: %d\n", h);
   BucketList l =  hashTable[h];
   while (l != NULL)
   {    

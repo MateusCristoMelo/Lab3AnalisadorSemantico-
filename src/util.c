@@ -255,7 +255,7 @@ void printTree( TreeNode * tree )
     { switch (tree->kind.exp) {
         case OpK: pc("Op: "); printTokenSyn(tree->attr.op,"\0"); break;
         case ConstK: pc("Const: %d\n",tree->attr.val); break;
-        case IdK: if(tree->attr.data.name != NULL && tree->attr.data.type == NULL) pc("Id: %s\n",tree->attr.data.name); break;
+        case IdK: if(tree->attr.data.name != NULL && strcmp(tree->attr.data.type, "call")) pc("Id: %s\n",tree->attr.data.name); break;
         default: pc("Unknown ExpNode kind\n"); break;
       }
     }
