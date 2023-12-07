@@ -38,7 +38,7 @@ static void genStmt( TreeNode * tree)
          cGen(tree->child[0]); //leva pro node idk
          break;
 
-      case FunDecK :
+      case FunDecK ://Creio que OK
          ScopeNow = tree->child[0]->attr.data.name;
          emitLabel(tree->child[0]->attr.data.name); //tree->attr.data.name
                   //p1 = tree->child[0]->child[0];
@@ -50,7 +50,7 @@ static void genStmt( TreeNode * tree)
                
                break; /* decl_k */
 
-      case IfK :
+      case IfK ://Creio OK
          if (TraceCode) emitComment("-> if") ;
          p1 = tree->child[0] ;
          p2 = tree->child[1] ;
@@ -63,28 +63,28 @@ static void genStmt( TreeNode * tree)
          /* recurse on then part */
          l1 = getNewBranchLabel();
          l2 = getNewBranchLabel();
-         //cGen(p2);
+         
          savedLoc2 = emitSkip(1) ;
          emitComment("if: jump to end belongs here");
          currentLoc = emitSkip(0) ;
          emitBackup(savedLoc1) ;
-         //emitRM_Abs("JEQ",ac,currentLoc,"if: jmp to else");
+         emitRM_Abs("JEQ",ac,currentLoc,"if: jmp to else");
          emitRestore() ;
          /* recurse on else part */
-         emitBranchInstruction("name1", l1, TRUE);
+         //emitBranchInstruction("name1", l1, TRUE);
          if (p3 != NULL) cGen(p3);
-         emitBranchInstruction("", l2, FALSE);
+         //emitBranchInstruction("", l2, FALSE);
          emitLabel(l1);
          cGen(p2);
          emitLabel(l2);
          currentLoc = emitSkip(0) ;
          emitBackup(savedLoc2) ;
-         //emitRM_Abs("LDA",PC,currentLoc,"jmp to end") ;
+         emitRM_Abs("LDA",PC,currentLoc,"jmp to end") ;
          emitRestore() ;
          if (TraceCode)  emitComment("<- if") ;
          break; /* if_k */
 
-      case WhileK:
+      case WhileK:// Creio que OK
          if (TraceCode) emitComment("-> while") ;
 
          p1 = tree->child[0] ;
@@ -97,16 +97,16 @@ static void genStmt( TreeNode * tree)
          emitLabel(l1);
          cGen(p1);
          /* generate code for test */
-         emitBranchInstruction("reg1", l2, FALSE);
+         //emitBranchInstruction("reg1", l2, FALSE);
          cGen(p2);
-         emitBranchInstruction("", l1, FALSE);
+         //emitBranchInstruction("", l1, FALSE);
          /* next instruction block */
          emitLabel(l2);
-         //emitRM_Abs("JEQ",ac,savedLoc1,"repeat: jmp back to body");
+         emitRM_Abs("JEQ",ac,savedLoc1,"repeat: jmp back to body");
          if (TraceCode)  emitComment("<- repeat") ;
          break; /* repeat */
 
-      case AssignK:
+      case AssignK: //Esse acho que nao OK. Para a arvore de p2, tenho que salvar o valor em algum lugar
          if (TraceCode) emitComment("-> assign") ;
          p1 = tree->child[0] ;
          p2 = tree->child[1] ;
@@ -114,9 +114,9 @@ static void genStmt( TreeNode * tree)
          cGen(p1);
          /* now store value */
          loc = st_lookup(tree->attr.data.name, ScopeNow);
-         //emitRM("ST",ac,loc,gp,"assign: store value");
+         emitRM("ST",ac,loc,gp,"assign: store value");
          cGen(p2);
-         emitAssignInstruction("", "reg1", "reg2", "");
+         //emitAssignInstruction("", "reg1", "reg2", "");
          if (TraceCode)  emitComment("<- assign") ;
          break; /* assign_k */
 
@@ -137,10 +137,10 @@ static void genStmt( TreeNode * tree)
          while( p1 != NULL ){
                countParams++;
                cGen(p1);
-               emitParamInstruction("reg/var");
+               //emitParamInstruction("reg/var");
                p1 = p1->sibling;
          }
-         emitCallInstruction("nomeReg", tree->attr.data.name, countParams);
+         //emitCallInstruction("nomeReg", tree->attr.data.name, countParams);
          //t1 = getNewVariable();
 
       default:
@@ -158,67 +158,89 @@ static void genExp( TreeNode * tree)
   TreeNode * p1, * p2;
   char * name1, * name2, * name3;
   //Acho que uma fila/pilha aqui pra pegar os nomes talvez
-  name1 = "reg1"; name2 = "reg2"; name3 = "reg3";
+  //name1 = "reg1"; name2 = "reg2"; name3 = "reg3";
   switch (tree->kind.exp) {
 
-    case ConstK :
+    case ConstK ://OK
       //emitLabelInt(tree->attr.val);
       if (TraceCode) emitComment("-> Const") ;
       /* gen code to load integer constant using LDC */
-      //emitRM("LDC",ac,tree->attr.val,0,"load const");
+      emitRM("LDC",ac,tree->attr.val,0,"load const");
       if (TraceCode)  emitComment("<- Const") ;
       break; /* ConstK */
     
-    case IdK :
+    case IdK : //OK
       if (TraceCode) emitComment("-> Id") ;
       loc = st_lookup(tree->attr.data.name, ScopeNow);
       //pc("Nome variavel %c", tree->attr.data.name);
-      p1 = tree->child[0];
-      (p1);
-      //emitRM("LD",ac,loc,gp,"load id value");
+      emitRM("LD",ac,loc,gp,"load id value");
       if (TraceCode)  emitComment("<- Id") ;
       break; /* IdK */
 
-    case OpK :
+    case OpK : //OK
           if (TraceCode) emitComment("-> Op") ;
          p1 = tree->child[0];
          p2 = tree->child[1];
          /* gen code for ac = left arg */
-         
-         /* gen code to push left operand */
-         //emitRM("ST",ac,tmpOffset--,mp,"op: push left");
-         /* gen code for ac = right operand */
          cGen(p1);
+         /* gen code to push left operand */
+         emitRM("ST",ac,tmpOffset--,mp,"op: push left");
+         /* gen code for ac = right operand */
          cGen(p2);
          /* now load left operand */
-         //emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
+         emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
          switch (tree->attr.op) {        
-            case PLUS : emitAssignInstruction("+", name1,name2,name3); break;
-            case MINUS : emitAssignInstruction("-",  name1,name2,name3); break;
-            case TIMES : emitAssignInstruction("*",  name1,name2,name3); break;
-            case OVER :emitAssignInstruction("/",  name1,name2,name3); break;
-            case EQ : emitAssignInstruction("==",  name1,name2,name3); break;
-            case LT : emitAssignInstruction("<",  name1,name2,name3); break;
-            case LE : emitAssignInstruction("<=",  name1,name2,name3); break;
-            case GT : emitAssignInstruction(">",  name1,name2,name3); break;
-            case GE : emitAssignInstruction(">=",  name1,name2,name3); break;
-            case NE : emitAssignInstruction("!=",  name1,name2,name3); break;
-            
-
-
-            /* emitRO("SUB",ac,ac1,ac,"op <") ;
-               emitRM("JLT",ac,2,PC,"br if true") ;
+            case PLUS : emitRO("ADD",ac,ac1,ac,"op +"); break;//emitAssignInstruction("+", name1,name2,name3); break;
+            case MINUS : emitRO("SUB",ac,ac1,ac,"op -"); break;//emitAssignInstruction("-",  name1,name2,name3); break;
+            case TIMES : emitRO("MUL",ac,ac1,ac,"op *"); break;//emitAssignInstruction("*",  name1,name2,name3); break;
+            case OVER :emitRO("DIV",ac,ac1,ac,"op /"); break; //emitAssignInstruction("/",  name1,name2,name3); break;
+            case EQ : 
+               emitRO("SUB",ac,ac1,ac,"op ==") ;
+               emitRM("JEQ",ac,2,pc,"br if true");
                emitRM("LDC",ac,0,ac,"false case") ;
-               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDA",pc,1,pc,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               //break;
-            case EQ :
-           emitRO("SUB",ac,ac1,ac,"op ==") ;
-               emitRM("JEQ",ac,2,PC,"br if true");
+               break;
+               //emitAssignInstruction("==",  name1,name2,name3); break;
+            case LT : 
+               emitRO("SUB",ac,ac1,ac,"op <") ;
+               emitRM("JLT",ac,2,pc,"br if true") ;
                emitRM("LDC",ac,0,ac,"false case") ;
-               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDA",pc,1,pc,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               break;*/
+               break;
+               //emitAssignInstruction("<",  name1,name2,name3); break;
+            case LE : 
+               emitRO("SUB",ac,ac1,ac,"op <=") ;
+               emitRM("JLE",ac,2,pc,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",pc,1,pc,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               break;//emitAssignInstruction("<=",  name1,name2,name3); break;
+            case GT : 
+               emitRO("SUB",ac,ac1,ac,"op >") ;
+               emitRM("JGT",ac,2,pc,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",pc,1,pc,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               break;
+               //emitAssignInstruction(">",  name1,name2,name3); break;
+            case GE : 
+               emitRO("SUB",ac,ac1,ac,"op >") ;
+               emitRM("JGE",ac,2,pc,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",pc,1,pc,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               break;
+               //emitAssignInstruction(">=",  name1,name2,name3); break;
+            case NE : 
+               emitRO("SUB",ac,ac1,ac,"op >") ;
+               emitRM("JNE",ac,2,pc,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",pc,1,pc,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               break;
+               //emitAssignInstruction("!=",  name1,name2,name3); break;
             default:
                emitComment("BUG: Unknown operator");
                break;
@@ -226,10 +248,6 @@ static void genExp( TreeNode * tree)
          } /* case op */
          if (TraceCode)  emitComment("<- Op") ;
          break; /* OpK */
-
-         
-            //emitCallInstruction(t1, tree->attr.id.name, countParams);
-
     default:
       break;
   }
