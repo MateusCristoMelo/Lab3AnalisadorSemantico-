@@ -19,7 +19,7 @@ static int highEmitLoc = 0;
 
 void emitLabel( char * label) 
 {   
-    pc("\n%10sTESTE:\n", label);
+    pc("\n%10s:\n", label);
 } /* emitLabel */
 
 void emitHalt() 
@@ -29,7 +29,7 @@ void emitHalt()
 
 void emitReturn(int v)
 {
-    pc("          return t%d", v);
+    pc("          return t%d\n", v);
 }
 
 

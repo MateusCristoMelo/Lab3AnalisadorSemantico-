@@ -279,7 +279,7 @@ relacional :
 |            NE {$$  = (YYSTYPE) NE; }
 ;
 
-soma_expressao: 
+soma_expressao : 
                 soma_expressao soma termo {$$ = newExpNode(OpK);
 			    $$->child[0] = $1;
 			    $$->attr.op = (TokenType)(intptr_t) $2;

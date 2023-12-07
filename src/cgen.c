@@ -40,7 +40,7 @@ static void genStmt( TreeNode * tree)
 
       case FunDecK ://Creio que OK
          ScopeNow = tree->child[0]->attr.data.name;
-         emitLabel(tree->child[0]->attr.data.name); //tree->attr.data.name
+         if (TraceCode)  emitLabel(tree->child[0]->attr.data.name); //tree->attr.data.name
                   //p1 = tree->child[0]->child[0];
                   p2 = tree->child[0]->child[1];
                   /* do nothing for p1 */
@@ -74,9 +74,9 @@ static void genStmt( TreeNode * tree)
          //emitBranchInstruction("name1", l1, TRUE);
          if (p3 != NULL) cGen(p3);
          //emitBranchInstruction("", l2, FALSE);
-         emitLabel(l1);
+         if (TraceCode)  emitLabel(l1);
          cGen(p2);
-         emitLabel(l2);
+         if (TraceCode)  emitLabel(l2);
          currentLoc = emitSkip(0) ;
          emitBackup(savedLoc2) ;
          emitRM_Abs("LDA",PC,currentLoc,"jmp to end") ;
@@ -94,14 +94,14 @@ static void genStmt( TreeNode * tree)
          l1 = getNewBranchLabel();
          l2 = getNewBranchLabel();
          /* generate code for body */
-         emitLabel(l1);
+         if (TraceCode)  emitLabel(l1);
          cGen(p1);
          /* generate code for test */
          //emitBranchInstruction("reg1", l2, FALSE);
          cGen(p2);
          //emitBranchInstruction("", l1, FALSE);
          /* next instruction block */
-         emitLabel(l2);
+         if (TraceCode)  emitLabel(l2);
          emitRM_Abs("JEQ",ac,savedLoc1,"repeat: jmp back to body");
          if (TraceCode)  emitComment("<- repeat") ;
          break; /* repeat */
@@ -127,7 +127,7 @@ static void genStmt( TreeNode * tree)
          if (p1 != NULL) {
             
             cGen(p1);
-            emitReturn(gp);
+            if (TraceCode)  emitReturn(gp);
             //emitRM("Return",ac,loc,gp,"return: store value");
             //emitReturnInstruction(t1);
          }
@@ -177,7 +177,7 @@ static void genExp( TreeNode * tree)
       //pc("Nome variavel %c", tree->attr.data.name);
      // if(!strcmp(tree->attr.data.type, "array")){
          emitRM("LD",ac,loc,gp,"load id value");
-         emitAssignInstruction("IdK", "reg", "exp", "4");
+         if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
         // }
       if (TraceCode)  emitComment("<- Id") ;
       break; /* IdK */
@@ -205,7 +205,7 @@ static void genExp( TreeNode * tree)
                emitRM("LDC",ac,0,ac,"false case") ;
                emitRM("LDA",PC,1,PC,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               emitAssignInstruction("==",  name1,name2,name3);
+               if (TraceCode)  emitAssignInstruction("==",  name1,name2,name3);
                break;
             case LT : 
                emitRO("SUB",ac,ac1,ac,"op <") ;
@@ -213,7 +213,7 @@ static void genExp( TreeNode * tree)
                emitRM("LDC",ac,0,ac,"false case") ;
                emitRM("LDA",PC,1,PC,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               emitAssignInstruction("<",  name1,name2,name3); 
+               if (TraceCode)  emitAssignInstruction("<",  name1,name2,name3); 
                break;
             case LE : 
                emitRO("SUB",ac,ac1,ac,"op <=") ;
@@ -221,7 +221,7 @@ static void genExp( TreeNode * tree)
                emitRM("LDC",ac,0,ac,"false case") ;
                emitRM("LDA",PC,1,PC,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               emitAssignInstruction("<=",  name1,name2,name3); 
+               if (TraceCode)  emitAssignInstruction("<=",  name1,name2,name3); 
                break;
             case GT : 
                emitRO("SUB",ac,ac1,ac,"op >") ;
@@ -229,7 +229,7 @@ static void genExp( TreeNode * tree)
                emitRM("LDC",ac,0,ac,"false case") ;
                emitRM("LDA",PC,1,PC,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               emitAssignInstruction(">",  name1,name2,name3);
+               if (TraceCode)  emitAssignInstruction(">",  name1,name2,name3);
                break;
             case GE : 
                emitRO("SUB",ac,ac1,ac,"op >") ;
@@ -237,7 +237,7 @@ static void genExp( TreeNode * tree)
                emitRM("LDC",ac,0,ac,"false case") ;
                emitRM("LDA",PC,1,PC,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               emitAssignInstruction(">=",  name1,name2,name3);
+               if (TraceCode)  emitAssignInstruction(">=",  name1,name2,name3);
                break;
             case NE : 
                emitRO("SUB",ac,ac1,ac,"op >") ;
@@ -245,7 +245,7 @@ static void genExp( TreeNode * tree)
                emitRM("LDC",ac,0,ac,"false case") ;
                emitRM("LDA",PC,1,PC,"unconditional jmp") ;
                emitRM("LDC",ac,1,ac,"true case") ;
-               emitAssignInstruction("!=",  name1,name2,name3); 
+               if (TraceCode)  emitAssignInstruction("!=",  name1,name2,name3); 
                break;
             default:
                emitComment("BUG: Unknown operator");
@@ -305,6 +305,6 @@ void codeGen(TreeNode * syntaxTree, char * codefile)
    cGen(syntaxTree);
    /* finish */
    emitComment("End of execution.");
-   emitHalt() ;
+   if (TraceCode)  emitHalt() ;
    emitRO("HALT",0,0,0,"");
 }

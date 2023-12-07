@@ -48,7 +48,7 @@ int EchoSource = FALSE;
 int TraceScan = TRUE;
 int TraceParse = TRUE;
 int TraceAnalyze = TRUE;
-int TraceCode = TRUE;
+int TraceCode = FALSE;
 
 int Error = FALSE;
 
@@ -136,13 +136,13 @@ doneTABstartGEN();
     int fnlen = strcspn(pgm + 2, ".") + 2;
     codefile = (char *)calloc(fnlen + 4, sizeof(char));
 
-    pc("program: %s\n", pgm);
+    pc("\nprogram: %s\n", pgm);
 
     strncpy(codefile, pgm, fnlen);
     pc("code file: %s\n", codefile);
     strcat(codefile, ".tm");
 
-    pc("%s", codefile);
+    pc("%s\n\n", codefile);
     code = fopen(codefile, "w");
     if (code == NULL)
     {
