@@ -281,9 +281,9 @@ relacional :
 
 soma_expressao : 
                 soma_expressao soma termo {$$ = newExpNode(OpK);
-			    $$->child[0] = $1;
-			    $$->attr.op = (TokenType)(intptr_t) $2;
-			    $$->child[2] = $3;}
+                $$->child[0] = $1;
+                $$->attr.op = (TokenType)(intptr_t) $2;
+                $$->child[2] = $3;}
 |               termo {$$ = $1;}
 
 soma : 
@@ -293,9 +293,9 @@ soma :
 
 termo : 
         termo mult fator {$$ = newExpNode(OpK);
-			    $$->child[0] = $1;
-			    $$->attr.op = (TokenType)(intptr_t)$2;
-			    $$->child[2] = $3;}
+                        $$->child[0] = $1;
+                        $$->attr.op = (TokenType)(intptr_t)$2;
+                        $$->child[2] = $3;}
 |       fator {$$ = $1;}
 ;
 

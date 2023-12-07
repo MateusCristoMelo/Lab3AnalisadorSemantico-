@@ -15,13 +15,13 @@
 /* mp = "memory pointer" points
  * to top of memory (for temp storage)
  */
-#define mp 6
+#define mp 5
 
 /* gp = "global pointer" points
  * to bottom of memory for (global)
  * variable storage
  */
-#define gp 5
+#define gp 6
 
 /* accumulator */
 #define ac 0
@@ -33,6 +33,7 @@
 
 static int variableNumber = 0 ;
 static int branchLabelNumber = 0;
+static int TraceAssembly = TRUE;
 char * getNewBranchLabel( void);
 void emitBranchInstruction(char* x,  char * L, int checkTrue); 
 void emitLabel( char * label);

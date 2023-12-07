@@ -140,7 +140,7 @@ void emitComment( char * c )
  * c = a comment to be printed if TraceCode is TRUE
  */
 void emitRO( char *op, int r, int s, int t, char *c)
-{ pc("%3d:  %5s  %d,%d,%d ",emitLoc++,op,r,s,t);
+{ if (TraceAssembly) pc("%3d:  %5s  %d,%d,%d ",emitLoc++,op,r,s,t);
   if (TraceCode) pc("\t%s",c) ;
   pc("\n") ;
   if (highEmitLoc < emitLoc) highEmitLoc = emitLoc ;
@@ -155,7 +155,7 @@ void emitRO( char *op, int r, int s, int t, char *c)
  * c = a comment to be printed if TraceCode is TRUE
  */
 void emitRM( char * op, int r, int d, int s, char *c)
-{ pc("%3d:  %5s  %d,%d(%d) ",emitLoc++,op,r,d,s);
+{ if (TraceAssembly) pc("%3d:  %5s  %d,%d(%d) ",emitLoc++,op,r,d,s);
   if (TraceCode) pc("\t%s",c) ;
   pc("\n") ;
   if (highEmitLoc < emitLoc)  highEmitLoc = emitLoc ;
@@ -196,8 +196,7 @@ void emitRestore(void)
  * c = a comment to be printed if TraceCode is TRUE
  */
 void emitRM_Abs( char *op, int r, int a, char * c)
-{ pc("%3d:  %5s  %d,%d(%d) ",
-               emitLoc,op,r,a-(emitLoc+1),PC);
+{ if (TraceAssembly) pc("%3d:  %5s  %d,%d(%d) ", emitLoc,op,r,a-(emitLoc+1),PC);
   ++emitLoc ;
   if (TraceCode) pc("\t%s",c) ;
   pc("\n") ;
