@@ -266,7 +266,7 @@ simples_expressao :
                     soma_expressao relacional soma_expressao {$$ = newExpNode(OpK);
                       $$->child[0] = $1;
 			                $$->attr.op = (TokenType)(intptr_t)$2;
-			                $$->child[1] = $3;}
+			                $$->child[2] = $3;}
 |                   soma_expressao {$$ = $1; }
 ;
 

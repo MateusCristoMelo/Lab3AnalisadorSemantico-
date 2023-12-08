@@ -35,17 +35,23 @@ static void genStmt( TreeNode * tree)
 
       case VarDecK:
       //emitLabel(tree->child[0]->attr.data.name);
-         cGen(tree->child[0]); //leva pro node idk
+         genExp(tree->child[0]); //leva pro node idk
          break;
 
-      case FunDecK ://Creio que OK
+      case FunDecK ://Tem que arurmar aqui para ele levar para o CALL ao inves do Dec
+      if (TraceCode) {emitComment("-> FunDec") ;emitLabel(tree->child[0]->attr.data.name);}
+      if(tree->child[0]->attr.data.name)
          ScopeNow = tree->child[0]->attr.data.name;
-         if (TraceCode)  emitLabel(tree->child[0]->attr.data.name); //tree->attr.data.name
+         loc = st_lookup(tree->child[0]->attr.data.name, "");
+         emitRM("ST",ac,loc,gp,"assign: store return adress");
+
+//tree->attr.data.name
                   //p1 = tree->child[0]->child[0];
                   p2 = tree->child[0]->child[1];
                   /* do nothing for p1 */
                   //cGen(p1); //Sao os argumentos da funcao
-                  cGen(p2);
+               cGen(p2);
+         if (TraceCode) emitComment("<- FunDec") ;
                   
                
                break; /* decl_k */
@@ -57,29 +63,38 @@ static void genStmt( TreeNode * tree)
          p3 = tree->child[2] ;
 
          /* generate code for test expression */
-         cGen(p1);
+         genExp(p1);
          savedLoc1 = emitSkip(1) ;
          emitComment("if: jump to else belongs here");
          /* recurse on then part */
          l1 = getNewBranchLabel();
          l2 = getNewBranchLabel();
-         
+         cGen(p2);
          savedLoc2 = emitSkip(1) ;
          emitComment("if: jump to end belongs here");
          currentLoc = emitSkip(0) ;
          emitBackup(savedLoc1) ;
-         emitRM_Abs("JEQ",ac,currentLoc,"if: jmp to else");
+         
          emitRestore() ;
+
+         
          /* recurse on else part */
          //emitBranchInstruction("name1", l1, TRUE);
-         if (p3 != NULL) cGen(p3);
+         if (p3 != NULL) {
+            int currentLoc = emitSkip(0);
+            emitBackup(savedLoc1);
+            emitRM_Abs("JEQ", ac, currentLoc, "If: jump to else");
+            emitRestore();
+            cGen(p3);
+         }
          //emitBranchInstruction("", l2, FALSE);
+         
          if (TraceCode)  emitLabel(l1);
-         cGen(p2);
+         
          if (TraceCode)  emitLabel(l2);
          currentLoc = emitSkip(0) ;
          emitBackup(savedLoc2) ;
-         emitRM_Abs("LDA",PC,currentLoc,"jmp to end") ;
+         emitRM_Abs("JEQ",PC,currentLoc,"if: jmp to end");
          emitRestore() ;
          if (TraceCode)  emitComment("<- if") ;
          break; /* if_k */
@@ -95,7 +110,7 @@ static void genStmt( TreeNode * tree)
          l2 = getNewBranchLabel();
          /* generate code for body */
          if (TraceCode)  emitLabel(l1);
-         cGen(p1);
+         genExp(p1);
          /* generate code for test */
          //emitBranchInstruction("reg1", l2, FALSE);
          cGen(p2);
@@ -111,7 +126,8 @@ static void genStmt( TreeNode * tree)
          p1 = tree->child[0] ;
          p2 = tree->child[1] ;
          /* generate code for rhs */
-         cGen(p2);
+         genExp(p1);
+         genExp(p2);
          /* now store value */
          // loc = st_lookup(tree->attr.data.name, ScopeNow);
          // emitRM("ST",ac,loc,gp,"assign: store value");
@@ -131,31 +147,110 @@ static void genStmt( TreeNode * tree)
          break; /* assign_k */
 
       case ReturnK :
+      if (TraceCode)  emitComment("-> Return") ;
+        
          p1 = tree->child[0];
          if (p1 != NULL) {
             
-            cGen(p1);
-            if (TraceCode)  emitReturn(gp);
+            genExp(p1);
+            //if (TraceCode)  emitReturn(gp);
             //emitRM("Return",ac,loc,gp,"return: store value");
             //emitReturnInstruction(t1);
          }
+            emitRM("LDA", mp, -1, mp, "adjust fp");
+            emitRM("LD", ac1, 0, mp, "load return address to ac1");
+            // Pulando de volta para o chamador
+            emitRM("LD", pc, 0, ac1, "return to caller");
+
+         if (TraceCode)  emitComment("<- Return") ;
          break; /* decl_k */
          
+/*
+Acredito que o problema esta no return, o meu:
+* -> Return
+ 19:    LDA  6,-1(6) 	adjust fp
+ 20:     LD  1,0(6) 	load return address to ac1
+ 21:     LD  856998529,0(1) 	return to caller
+* <- Return
+o que era para dar:
+-> return
+* -> Function Call (gdc)
+ 20:     ST  2,-4(2) 	Guard fp
+* -> Id
+ 21:     LD  0,-3(2) 	load id value
+* <- Id
+ 22:     ST  0,-6(2) 	Store value of func argument
+* -> Op
+* -> Id
+ 23:     LD  0,-2(2) 	load id value
+* <- Id
+ 24:     ST  0,-7(2) 	op: push left
+* -> Op
+* -> Op
+* -> Id
+ 25:     LD  0,-2(2) 	load id value
+* <- Id
+ 26:     ST  0,-8(2) 	op: push left
+* -> Id
+ 27:     LD  0,-3(2) 	load id value
+* <- Id
+ 28:     LD  1,-8(2) 	op: load left
+ 29:    DIV  0,1,0 	op /
+* <- Op
+ 30:     ST  0,-8(2) 	op: push left
+* -> Id
+ 31:     LD  0,-3(2) 	load id value
+* <- Id
+ 32:     LD  1,-8(2) 	op: load left
+ 33:    MUL  0,1,0 	op *
+* <- Op
+ 34:     LD  1,-7(2) 	op: load left
+ 35:    SUB  0,1,0 	op -
+* <- Op
+ 36:     ST  0,-7(2) 	Store value of func argument
+ 37:    LDA  2,-4(2) 	change fp
+ 38:    LDC  0,40(0) 	Guard return adress
+ 39:    LDA  7,-36(7) 	jump to function
+* <- Function Call
+ 40:    LDA  1,0(2) 	save current fp into ac1
+ 41:     LD  2,0(2) 	make fp = ofp
+ 42:     LD  7,-1(1) 	return to caller
+* <- return
+*/
+
       case CallK: 
+      if (TraceCode)  emitComment("-> FCall") ;
          p1 = tree->child[1];
          int countParams = 0;
          while( p1 != NULL ){
+               genExp(p1);
+               emitRM("ST", ac, tmpOffset--, mp, "Call: push argument");
                countParams++;
-               cGen(p1);
+               //cGen(p1);
                //emitParamInstruction("reg/var");
                p1 = p1->sibling;
          }
-         //emitCallInstruction("nomeReg", tree->attr.data.name, countParams);
-         //t1 = getNewVariable();
+         // Emita a instrução de chamada de função
+         // Ajuste tmpOffset para acomodar o endereço de retorno
+         tmpOffset -= 1;
+         emitRM("LDA", mp, tmpOffset + 1, mp, "Call: store return address");
 
+         // Ajuste tmpOffset para acomodar os parâmetros e o endereço de retorno
+         tmpOffset -= countParams;
+
+         // Emita uma instrução de salto para o endereço da função
+         emitRM("LDA", pc, st_lookup(tree->child[0]->attr.data.name, ""), PC, "Call: jump to function");
+
+         // Recupere o valor de retorno após a chamada da função
+         tmpOffset += countParams;
+         emitRM("LD", ac, tmpOffset + 1, mp, "Call: retrieve return value");
+
+      if (TraceCode)  emitComment("<- FCALL") ;
       default:
-         break;
+         break;   
     }
+
+
 
 } /* genStmt */
 
@@ -197,26 +292,17 @@ static void genExp( TreeNode * tree)
       case OpK : //OK
             if (TraceCode) emitComment("-> Op") ;
             p1 = tree->child[0];
-            p2 = tree->child[1];
-            switch (tree->attr.op) { 
-               case PLUS:
-               case MINUS:
-               case TIMES:
-               case OVER:
-                  p2 = tree->child[2];
-                  break;
-               default:
-                  break;
-            }
+            p2 = tree->child[2];
+
             /* gen code for ac = left arg */
             if (TraceCode) emitComment("-> left") ;
-            cGen(p1);
+            genExp(p1);
             if (TraceCode) emitComment("<- left") ;
             /* gen code to push left operand */
             emitRM("ST",ac,tmpOffset--,mp,"op: push left");
             /* gen code for ac = right operand */
             if (TraceCode) emitComment("-> right") ;
-            cGen(p2);
+            genExp(p2);
             if (TraceCode) emitComment("<- right") ;
             /* now load left operand */
             emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
@@ -337,6 +423,7 @@ void codeGen(TreeNode * syntaxTree, char * codefile)
    /* generate standard prelude */
    //emitComment("Standard prelude:");
    emitRM("LD",mp,0,ac,"load maxaddress from location 0");
+   emitRM("LD",mp-4,0,ac,"load maxaddress from location 0");
    emitRM("ST",ac,0,ac,"clear location 0");
    //emitComment("End of standard prelude.");
    /* generate code for TINY program */
