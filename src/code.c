@@ -19,17 +19,17 @@ static int highEmitLoc = 0;
 
 void emitLabel( char * label) 
 {   
-    pc("\n%10s:\n", label);
+    pc("\n*%10s:\n", label);
 } /* emitLabel */
 
 void emitHalt() 
 {   
-    pc("          halt\n");
+    pc("*          halt\n");
 } /* emitLabel */
 
 void emitReturn(int v)
 {
-    pc("          return t%d\n", v);
+    pc("*          return t%d\n", v);
 }
 
 
@@ -93,31 +93,31 @@ char* getNewBranchLabel(void) {
 
 void emitBranchInstruction(char* x,  char * L, int checkTrue)
 {   if (strlen(x) == 0) {
-        pc("          goto %s\n", L);
+        pc("*          goto %s\n", L);
     } else {
         if(checkTrue)
-            pc("          if_true %s goto %s\n", x, L);
+            pc("*          if_true %s goto %s\n", x, L);
         else
-            pc("          if_false %s goto %s\n", x, L);
+            pc("*          if_false %s goto %s\n", x, L);
     }
 } 
 
 void emitAssignInstruction( char *op, char* r, char* s, char* t) 
 {   if (strlen(op) == 0 && strlen(t) == 0) {
-        pc("          %s = %s \n",r,s); 
+        pc("*          %s = %s \n",r,s); 
     } else {
-        pc("          %s = %s %s %s \n",r,s,op,t);
+        pc("*          %s = %s %s %s \n",r,s,op,t);
     }
 } /* emitAssingInstruction */
 
 void emitParamInstruction( char* c )
 {
-    pc("          param %s \n", c);
+    pc("*          param %s \n", c);
 }
 
 void emitCallInstruction( char* x, char *f, int n)
 {
-    pc("          %s = call %s, %d\n", x, f, n);
+    pc("*          %s = call %s, %d\n", x, f, n);
 }
 /*
 void emitCallInstruction( char* x, char *f, int n)

@@ -232,8 +232,8 @@ static void insertNode(TreeNode * t) //alterar essa
 void buildSymtab(TreeNode * syntaxTree)
 { 
   // insertBuiltinFunctions();
-  st_insert("input", 0, 0, "" ,"fun", "int");
-  st_insert("output", 0, 0, "" ,"fun", "void");
+  st_insert("input", 0, location++, "" ,"fun", "int");
+  st_insert("output", 0, location++, "" ,"fun", "void");
   // pc("\n\nSTACK\n\n");
   // while (!isEmpty(&var_or_array_stack)) {
   //   pc("\n\n%-7s\n\n",pop(&var_or_array_stack));

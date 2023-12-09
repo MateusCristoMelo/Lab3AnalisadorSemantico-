@@ -125,13 +125,14 @@ params:
 ;
 
 param_lista:
-            param_lista COMMA param {YYSTYPE t = $1;
-                                      if (t != NULL) {
-                                        while (t->sibling != NULL) t = t->sibling;
-                                              t->sibling = $3;
-                                              //$$ = $1;
-                                    } else $$ = $3;}
-|           param {$$ = $1;}
+        param_lista COMMA param {       YYSTYPE t = $1;
+                                        if (t != NULL) {
+                                                         while (t->sibling != NULL) t = t->sibling;
+                                                         t->sibling = $3;
+                                                         //$$ = $1;
+                                        } else $$ = $3;
+                                    }
+|       param {$$ = $1;}
 ;
 
 
@@ -169,28 +170,28 @@ composto_decl:
                     while (t->sibling != NULL) t = t->sibling;
                     t->sibling = $3;
                     $$ = $2;
-			    }
+			          }
                 else 
                   $$ = $3;}
 ;
 
 local_declaracoes:
-                   local_declaracoes var_declaracao {YYSTYPE t = $1;
-                if (t != NULL) {
-			        while (t->sibling != NULL) t = t->sibling;
-                    t->sibling = $2;
-                    $$ = $1;
-			    } else $$ = $2;}
+              local_declaracoes var_declaracao {YYSTYPE t = $1;
+                                                if (t != NULL) {
+                                                      while (t->sibling != NULL) t = t->sibling;
+                                                      t->sibling = $2;
+                                                      $$ = $1;
+                                                } else $$ = $2;}
 |                   /* vazio */ {$$ = NULL;}
 ;
 
 statement_lista:
       statement_lista statement {YYSTYPE t = $1;
-                if (t != NULL){
-			        while (t->sibling != NULL) t = t->sibling;
-                    t->sibling = $2;
-                    $$ = $1;
-			    } else $$ = $2;}
+                                if (t != NULL){
+                                    while (t->sibling != NULL) t = t->sibling;
+                                          t->sibling = $2;
+                                          $$ = $1;
+                                } else $$ = $2;}
 |                  /* vazio */ {$$ = NULL;}
 ;
 
