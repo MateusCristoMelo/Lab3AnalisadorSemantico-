@@ -26,6 +26,13 @@ static char comment[128];
 static void cGen (TreeNode * tree);
 static void genExp( TreeNode * tree);
 
+static int lookup_args(char * fun_name, int index_args)
+{
+   // RETORNAR loc do argumento index_args da funcao fun_name
+   // PRECISA PEGAR NA ORDEM
+   // st_lookup(tree->child[0]->attr.data.name, "");
+}
+
 /* Procedure genStmt generates code at a statement node */
 static void genStmt( TreeNode * tree)
 { 
@@ -81,10 +88,10 @@ static void genStmt( TreeNode * tree)
          savedLoc1 = emitSkip(0);
          ScopeNow = tree->child[0]->attr.data.name;
 
-         emitBackup(locMain);
          // confere se esta na main, caso positivo ent insere comando inicial de jump main
          if(!strcmp(tree->child[0]->attr.data.name, "main")) 
          {
+            emitBackup(locMain);
             emitRM("LDC", PC, savedLoc1, 0, "jump to main"); // salto incondicional
             emitRestore();
          }
@@ -100,46 +107,16 @@ static void genStmt( TreeNode * tree)
             emitRM("ST", ac, loc, gp, "add into memory"); // salva em qual instrucao pular quando aparecer um call no gp referente a funcao
          }
 
-         // HANDLE INPUT/OUTPUT
-         if(!strcmp(tree->child[0]->attr.data.name, "input")) 
-         {
-            emitRO("IN",ac,0,0,"read integer value");
-         }
-         else
-         {
-            // HANDLE PARAMETERS
-            // talvez seja uma boa contar os parametros para dar shift no espaço da memory
-            p1 = tree->child[0]->child[0];
-            int count_params = 0;
-            while( p1 != NULL )
-            {
-               if (TraceCode) emitComment("-> params") ;
-               // PQ VC TA DIMINUINDO O OFFSET DEPOIS?
-               // emitRM("ST", ac, tmpOffset--, mp, "Call: push argument");
-               count_params++;
-               p1 = p1->sibling;
-               if (TraceCode) emitComment("<- params") ;
-            }
-            
-            if(!strcmp(tree->child[0]->attr.data.name, "output"))
-            { 
-               // IMPORTANTE LEMBRAR DE CARREGAR OS ARGUMENTOS NO ACUMULADOR
-               emitRM("LD", ac, 1, fp, "load first argument");
-               /* now output it */
-               emitRO("OUT",ac,0,0,"write ac");
-            }
-            else
-            {
-               // HANDLE STATEMENTS
-               p2 = tree->child[0]->child[1];
-               cGen(p2);
-            }
-         }
-         emitRM("LDA", mp, 0, fp, "copy fp to mp");
-         emitRM("LD", fp, 0, mp, "pop fp");
-         emitRM("LDC", ac1, 1, 0, "ac1 = 1");
-         emitRO("ADD", mp, mp, ac1, "mp = mp + ac1");
+         // HANDLE STATEMENTS
+         p2 = tree->child[0]->child[1];
+         cGen(p2);
+         
+         // HANDLE RETURN ADDRESS, IF ITS MAIN JUST LET IT FINISHES
          if(strcmp(tree->child[0]->attr.data.name, "main")) {
+            // emitRM("LDA", mp, 0, fp, "copy fp to mp");
+            // emitRM("LD", fp, 0, mp, "pop fp");
+            emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+            emitRO("ADD", mp, mp, ac1, "mp = mp + ac1 = mp + 1");
             emitRM("LD", PC, -2, mp, "jump to return address");
          }
          
@@ -147,6 +124,42 @@ static void genStmt( TreeNode * tree)
          if(TraceCode) emitComment(comment);
          break; /* fun_dec_k */
 
+         // // HANDLE INPUT/OUTPUT
+         // if(!strcmp(tree->child[0]->attr.data.name, "input")) 
+         // {
+         //    emitRO("IN",ac,0,0,"read integer value");
+         // }
+         // else
+         // {
+         //    // // HANDLE PARAMETERS
+         //    // // talvez seja uma boa contar os parametros para dar shift no espaço da memory
+         //    // p1 = tree->child[0]->child[0];
+         //    // int count_params = 0;
+         //    // while( p1 != NULL )
+         //    // {
+         //    //    if (TraceCode) emitComment("-> params") ;
+         //    //    // PQ VC TA DIMINUINDO O OFFSET DEPOIS?
+         //    //    // emitRM("ST", ac, tmpOffset--, mp, "Call: push argument");
+         //    //    count_params++;
+         //    //    p1 = p1->sibling;
+         //    //    if (TraceCode) emitComment("<- params") ;
+         //    // }
+            
+         //    if(!strcmp(tree->child[0]->attr.data.name, "output"))
+         //    { 
+         //       // // IMPORTANTE LEMBRAR DE CARREGAR OS ARGUMENTOS NO ACUMULADOR
+         //       // emitRM("LD", ac, 1, fp, "load first argument");
+         //       /* now output it */
+         //       emitRO("OUT",ac,0,0,"write ac");
+         //    }
+         //    else
+         //    {
+         //       // HANDLE STATEMENTS
+         //       p2 = tree->child[0]->child[1];
+         //       cGen(p2);
+         //    }
+         // }
+         
          // if(tree->child[0]->attr.data.name)
          //    ScopeNow = tree->child[0]->attr.data.name;
          //    loc = st_lookup(tree->child[0]->attr.data.name, "");
@@ -314,11 +327,13 @@ static void genStmt( TreeNode * tree)
          p1 = tree->child[0];
          if (p1 != NULL) {
             
+            // PRECISA AJUSTAR PARA AJUSTAR A STACK ANTES DE RETORNAR
+            
             cGen(p1);
             //if (TraceCode)  emitReturn(gp);
             //emitRM("Return",ac,loc,gp,"return: store value");
             //emitReturnInstruction(t1);
-         }            
+         }
 
          if (TraceCode)  emitComment("<- Return") ;
          break; /* return_k */
@@ -340,21 +355,11 @@ static void genStmt( TreeNode * tree)
 
          p1 = tree->child[1];
          
-         // HANDLE CALL THE CORRECT FUNCTION and JUMP
-         loc = st_lookup(tree->child[0]->attr.data.name, "");
-
          // HANDLE INPUT/OUTPUT
          if(!strcmp(tree->child[0]->attr.data.name, "input")) 
          {
             emitRO("IN",ac,0,0,"read integer value");
          } 
-         else if(!strcmp(tree->child[0]->attr.data.name, "output"))
-         { 
-            // IMPORTANTE LEMBRAR DE CARREGAR OS ARGUMENTOS NO ACUMULADOR
-            // emitRM("LD", ac, 1, fp, "load first argument");
-            /* now output it */
-            emitRO("OUT",ac,0,0,"write ac");
-         }
          else 
          {
             // HANDLE LOAD ARGS
@@ -362,38 +367,41 @@ static void genStmt( TreeNode * tree)
             int count_args = 0;
             while( p1 != NULL )
             {
-                  genExp(p1);
-                  // PQ VC TA DIMINUINDO O OFFSET DEPOIS?
-                  // emitRM("ST", ac, tmpOffset--, mp, "Call: push argument");
-                  // emitRM("ST", ac, --tmpOffset, mp, "op: push argument(reverse order)");
-                  count_args++;
-                  //cGen(p1);
-                  //emitParamInstruction("reg/var");
-                  p1 = p1->sibling;
-            }
-            emitRM("LDA", mp, -count_args, mp, "stack growth after push arguments");
-            sprintf(comment, "%d arguments are pushed", count_args);
-            if(TraceCode) emitComment(comment);
+               // Percorre o valor de Id e da LOAD no acumulador
+               cGen(p1);
 
-            emitRM("LDC", ac1, 1, 0, "ac1 = 1");
-            emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
-            emitRM("ST", fp, 0, mp, "push fp");
-            emitRM("LDA", fp, 0, mp, "copy sp to fp");
-            emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+               loc = lookup_args(tree->child[0]->attr.data.name, count_args);
+               sprintf(comment, "argument %d saved at %d", count_args, loc);
+               
+               // pega o que esta no acumulador e passa para loc do argumento certo
+               emitRM("ST", ac, loc, gp, comment); 
+               
+               count_args++;
+               p1 = p1->sibling;
+            }
+
+            // // DECRESCE mp para DAR ESPAÇO para colocar FUNCTION POINTER REGISTER
+            // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+            // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+            // emitRM("ST", fp, 0, mp, "push fp");
+            // // COLOCA fp NA MEMORIA
+            // emitRM("LDA", fp, 0, mp, "copy sp to fp");
+            // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+            // CALCULATE RETURN ADDRESS AND PUSH INTO THE STACK
             emitRM("LDC", ac1, 2, 0, "ac1 = 2");
             emitRO("ADD", ac1, ac1, PC, "calculate return address");
             emitRM("ST", ac1, 0, mp, "push return address");
             
             // CALL FUNCTION at the correct global pointer address
+            loc = st_lookup(tree->child[0]->attr.data.name, "");
             sprintf(comment, "jump to function at %d", loc);
             if (TraceCode) emitComment(comment);
             emitRM("LD", PC, loc, gp, comment);
 
-            // HANDLE CLEAR THE STACK (MEMORY POINTER)
-            if (count_args > 0)
-            {
-               emitRM("LDC", ac1, count_args, 0, "ac1 = numberOfArguments");
-               emitRO("ADD", mp, mp, ac1, "pop arguments");
+            if(!strcmp(tree->child[0]->attr.data.name, "output"))
+            { 
+               /* now output it */
+               emitRO("OUT",ac,0,0,"write ac");
             }
 
          }
@@ -401,6 +409,40 @@ static void genStmt( TreeNode * tree)
          sprintf(comment, "<- FCall %s", tree->child[0]->attr.data.name);
          if(TraceCode) emitComment(comment);
          break; /* call_k */
+
+         //  HANDLE LOAD ARGS
+         // // toda vez que puxa um argumento, so dar store do acumulador no gp respectivo
+         // int count_args = 0;
+         // while( p1 != NULL )
+         // {
+         //       genExp(p1);
+         //       // PQ VC TA DIMINUINDO O OFFSET DEPOIS?
+         //       // emitRM("ST", ac, tmpOffset--, mp, "Call: push argument");
+         //       // emitRM("ST", ac, --tmpOffset, mp, "op: push argument(reverse order)");
+         //       count_args++;
+         //       //cGen(p1);
+         //       //emitParamInstruction("reg/var");
+         //       p1 = p1->sibling;
+         // }
+         // emitRM("LDA", mp, -count_args, mp, "stack growth after push arguments");
+         // sprintf(comment, "%d arguments are pushed", count_args);
+         // if(TraceCode) emitComment(comment);
+
+         // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+         // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+         // emitRM("ST", fp, 0, mp, "push fp");
+         // emitRM("LDA", fp, 0, mp, "copy sp to fp");
+         // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+         // emitRM("LDC", ac1, 2, 0, "ac1 = 2");
+         // emitRO("ADD", ac1, ac1, PC, "calculate return address");
+         // emitRM("ST", ac1, 0, mp, "push return address");
+
+         // // HANDLE CLEAR THE STACK (MEMORY POINTER)
+         //    if (count_args > 0)
+         //    {
+         //       emitRM("LDC", ac1, count_args, 0, "ac1 = numberOfArguments");
+         //       emitRO("ADD", mp, mp, ac1, "pop arguments");
+         //    }
 
          // // Emita a instrução de chamada de função
          // // Ajuste tmpOffset para acomodar o endereço de retorno
