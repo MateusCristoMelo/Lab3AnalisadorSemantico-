@@ -18,8 +18,9 @@
 */
 static int tmpOffset = 0;
 static char * ScopeNow = "";
+static int memorySize = 0;
 
-static int locMain = 0;
+static int locFunction = 0;
 static char comment[128];
 
 /* prototype for internal recursive code generator */
@@ -73,20 +74,17 @@ static void genStmt( TreeNode * tree)
           *  Averiguar espaço na memória para params, mas não fazer nada ainda
           */
          
-         //Tem que arurmar aqui para ele levar para o CALL ao inves do Dec
          sprintf(comment, "-> FunDec %s ---------------------------", tree->child[0]->attr.data.name);
          if(TraceCode) emitComment(comment);
-         // if (TraceCode) {emitComment("-> FunDec") ;emitLabel(tree->child[0]->attr.data.name);}
-         
+
          savedLoc1 = emitSkip(0);
          ScopeNow = tree->child[0]->attr.data.name;
+         emitBackup(locFunction);
 
          // confere se esta na main, caso positivo ent insere comando inicial de jump main
          if(!strcmp(tree->child[0]->attr.data.name, "main")) 
          {
-            emitBackup(locMain);
             emitRM("LDC", PC, savedLoc1, 0, "jump to main"); // salto incondicional
-            emitRestore();
          }
          else {
             // HANDLE FUNCTION POINTER IN THE GP TABLE
@@ -96,26 +94,40 @@ static void genStmt( TreeNode * tree)
             if (TraceCode) emitComment(comment);
             sprintf(comment, "load function location (%d)", savedLoc1);
             
-            emitRM("LDC", ac, savedLoc1, 0, comment); // carrega o acumulador com o loc de instrucao
-            emitRM("ST", ac, loc, gp, "add into memory"); // salva em qual instrucao pular quando aparecer um call no gp referente a funcao
+            emitRM("LDC", ac1, savedLoc1, 0, comment); // carrega o acumulador com o loc de instrucao
+            emitRM("ST", ac1, loc, gp, "add into memory"); // salva em qual instrucao pular quando aparecer um call no gp referente a funcao
+         }
+
+         locFunction += 2;
+         emitRestore();
+
+         // COPY RETURN ADDRESS TO THE STACK
+         if(strcmp(tree->child[0]->attr.data.name, "main")) 
+         {
+            // salva Old Frame Pointer na MEMORY
+            emitRM("ST", fp, --memorySize, mp, "save old fp to mp");
+            // atualiza o Frame Pointer
+            emitRM("LDA", fp, memorySize, mp, "update fp with mp of old fp");
+            // da um store do return address presente no acumulador
+            emitRM("ST", ac, --memorySize, mp, "store return address from ac");
          }
 
          // HANDLE STATEMENTS
          p2 = tree->child[0]->child[1];
          cGen(p2);
          
-         // HANDLE RETURN ADDRESS, IF ITS MAIN JUST LET IT FINISHES
-         if(strcmp(tree->child[0]->attr.data.name, "main")) {
-            emitRM("LDA", mp, 0, fp, "copy fp to mp");
-            emitRM("LD", fp, 0, mp, "pop fp");
-            emitRM("LDC", ac1, 1, 0, "ac1 = 1");
-            emitRO("ADD", mp, mp, ac1, "mp = mp + ac1 = mp + 1");
-            emitRM("LD", PC, -2, mp, "jump to return address");
-         }
-         
          sprintf(comment, "<- FunDec %s ---------------------------", tree->child[0]->attr.data.name);
          if(TraceCode) emitComment(comment);
          break; /* fun_dec_k */
+
+         // HANDLE RETURN ADDRESS, IF ITS MAIN JUST LET IT FINISHES
+         // if(strcmp(tree->child[0]->attr.data.name, "main")) {
+         //    // emitRM("LDA", mp, 0, fp, "copy fp to mp");
+         //    // emitRM("LD", fp, 0, mp, "pop fp");
+         //    // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+         //    // emitRO("ADD", mp, mp, ac1, "mp = mp + ac1 = mp + 1");
+         //    // emitRM("LD", PC, -2, mp, "jump to return address");
+         // }
 
          // // HANDLE INPUT/OUTPUT
          // if(!strcmp(tree->child[0]->attr.data.name, "input")) 
@@ -320,16 +332,25 @@ static void genStmt( TreeNode * tree)
          p1 = tree->child[0];
          if (p1 != NULL) {
             
-            // PRECISA AJUSTAR PARA AJUSTAR A STACK ANTES DE RETORNAR
-            
+            // Da um load no ACUMULADOR ac que guarda qual eh o valor de retorno
             cGen(p1);
             //if (TraceCode)  emitReturn(gp);
             //emitRM("Return",ac,loc,gp,"return: store value");
             //emitReturnInstruction(t1);
          }
 
+         // HANDLE RETURN ADDRESS
+         emitRM("LDA", ac1, 0, fp, "save current fp to ac1");
+         emitRM("LD", fp, 0, fp, "adjust fp");
+         emitRM("LD", PC, -1, ac1, "jump to return address");
+
          if (TraceCode)  emitComment("<- Return") ;
          break; /* return_k */
+
+         // emitRM("LDA", mp, 0, fp, "copy fp to mp");
+         // emitRM("LD", fp, 0, mp, "pop fp");
+         // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+         // emitRO("ADD", mp, mp, ac1, "mp = mp + ac1 = mp + 1");
          
          // emitRM("LDA", mp, -1, mp, "adjust fp");
          // emitRM("LD", ac1, 0, mp, "load return address to ac1");
@@ -398,8 +419,16 @@ static void genStmt( TreeNode * tree)
                // emitRM("LDC", ac1, 2, 0, "ac1 = 2");
                // emitRO("ADD", ac1, ac1, PC, "calculate return address");
                // emitRM("ST", ac1, 0, mp, "push return address");
-               emitRM("LDC", ac, 2, PC, "accumulate return address");
+               // emitRM("LDC", ac, 2, PC, "accumulate return address");
                // CALL FUNCTION at the correct global pointer address
+               
+               // if(!strcmp(tree->child[0]->attr.data.name, "main")) 
+               // {
+               // altera frame pointer
+
+               // acumula address de retorno
+               emitRM("LDA", ac, 1, PC, "accumulate return address");
+               // }         
                
                sprintf(comment, "jump to function at %d", loc);
                if (TraceCode) emitComment(comment);
@@ -516,13 +545,15 @@ static void genExp( TreeNode * tree)
             genExp(p1);
             if (TraceCode) emitComment("<- left") ;
             /* gen code to push left operand */
-            emitRM("ST",ac,tmpOffset--,mp,"op: push left");
+            tmpOffset--;
+            emitRM("ST",ac,(memorySize+tmpOffset),mp,"op: push left");
             /* gen code for ac = right operand */
             if (TraceCode) emitComment("-> right") ;
             genExp(p2);
             if (TraceCode) emitComment("<- right") ;
             /* now load left operand */
-            emitRM("LD",ac1,++tmpOffset,mp,"op: load left");
+            emitRM("LD",ac1,(memorySize+tmpOffset),mp,"op: load left");
+            tmpOffset++;
             switch (tree->attr.op) {        
                case PLUS :  
                   emitRO("ADD",ac,ac1,ac,"op +"); 
@@ -620,6 +651,21 @@ static void cGen( TreeNode * tree)
    }
 }
 
+static int getSizeOfGlobal(TreeNode * syntaxTree)
+{
+   int result = 0;
+   TreeNode *tree = syntaxTree;
+   while(tree != NULL)
+   {
+      if(tree->kind.stmt == VarDecK && (!strcmp(tree->attr.data.type, "array")))
+         result += tree->child[0]->child[0]->attr.val;
+      else
+         result++;
+      tree = tree->sibling;
+   }
+   return result;
+}
+
 /**********************************************/
 /* the primary function of the code generator */
 /**********************************************/
@@ -629,7 +675,6 @@ static void cGen( TreeNode * tree)
  * of the code file, and is used to print the
  * file name as a comment in the code file
  */
-
 
 void codeGen(TreeNode * syntaxTree, char * codefile)
 {  char * s = malloc(strlen(codefile)+7);
@@ -644,7 +689,8 @@ void codeGen(TreeNode * syntaxTree, char * codefile)
    emitRM("ST",ac,0,ac,"clear location 0");
    //emitComment("End of standard prelude.");
    /* generate code for TINY program */
-   locMain = emitSkip(1);
+   locFunction = emitSkip(getSizeOfGlobal(syntaxTree)*2 - 1);
+   // pc("* Size of global is %d\n", getSizeOfGlobal(syntaxTree));
    cGen(syntaxTree);
    /* finish */
    emitComment("End of execution.");
