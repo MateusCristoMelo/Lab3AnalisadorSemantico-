@@ -48,6 +48,10 @@ static void genStmt( TreeNode * tree)
 
          sprintf(comment, "-> VarDec %s ", tree->child[0]->attr.data.name);
          if(TraceCode) emitComment(comment);
+         
+         sprintf(comment, "<- VarDec %s ", tree->child[0]->attr.data.name);
+         if(TraceCode) emitComment(comment);
+         break; /* var_dec_k */
 
          // int tmpSize = 1;
          // NEED TO SUM THE SIZE OF ARRAY TO ALLOCATE PROPERLY
@@ -60,11 +64,7 @@ static void genStmt( TreeNode * tree)
          // emitRO("SUB", mp, mp, ac1, "allocate local variables");
          // emitRM("LDC", ac1, tmpSize, 0, "ac1 = sum of size of local variables");
          // emitRO("ADD", mp, mp, ac1, "free local variable");
-
          // genExp(tree->child[0]); //leva pro node idk
-         sprintf(comment, "<- VarDec %s ", tree->child[0]->attr.data.name);
-         if(TraceCode) emitComment(comment);
-         break; /* var_dec_k */
 
       case FunDecK:
          /* 
@@ -210,6 +210,18 @@ static void genStmt( TreeNode * tree)
          emitRM_Abs("JEQ",ac,currentLoc,"if: jmp to else"); // se o aumulador (que deveria ser o resultado de genExp(p1)) for 0, ou seja, FALSE, ent pule o IF (só que ta escrevendo isso na instrucao savedLoc1)
          emitRestore() ; // essencialmente volta para savedLoc2
 
+         if (TraceCode)  emitLabel(l1);
+         cGen(p3); // gera o que aconteceria no caso ELSE
+         currentLoc = emitSkip(0); // grava o final do ELSE
+         emitBackup(savedLoc2); //volta para o savedLoc2 (se tudo isso aqui estivesse dentro do IF tu n poderia ter dado skip(1) quando salva o savedloc2)
+         emitRM_Abs("LDA",PC,currentLoc,"if: jmp to end");
+         emitRestore() ;
+
+         if (TraceCode)  emitLabel(l2);
+         
+         if (TraceCode)  emitComment("<- if") ;
+         break; /* if_k */
+
          /* recurse on else part */
          //emitBranchInstruction("name1", l1, TRUE);
          // if (p3 != NULL) {
@@ -222,22 +234,6 @@ static void genStmt( TreeNode * tree)
             
          // }
          //emitBranchInstruction("", l2, FALSE);
-         
-         if (TraceCode)  emitLabel(l1);
-         
-         // if (p3 != NULL) // NAO PRECISA DESSE IF, NA TEORIA SE N TIVER O IF, ELE ENTRA DENTRO DO P3, N ROLA NADA E VAI EMITIR UMA BRANCH INSTRUCTION TO ELSE que nao sera acionada 
-         // {
-         cGen(p3); // gera o que aconteceria no caso ELSE
-         currentLoc = emitSkip(0); // grava o final do ELSE
-         emitBackup(savedLoc2); //volta para o savedLoc2 (se tudo isso aqui estivesse dentro do IF tu n poderia ter dado skip(1) quando salva o savedloc2)
-         emitRM_Abs("LDA",PC,currentLoc,"if: jmp to end");
-         emitRestore() ;
-         // }
-         
-         if (TraceCode)  emitLabel(l2);
-         
-         if (TraceCode)  emitComment("<- if") ;
-         break; /* if_k */
 
       case WhileK:// Creio que OK
          /*
@@ -331,12 +327,8 @@ static void genStmt( TreeNode * tree)
       
          p1 = tree->child[0];
          if (p1 != NULL) {
-            
             // Da um load no ACUMULADOR ac que guarda qual eh o valor de retorno
             cGen(p1);
-            //if (TraceCode)  emitReturn(gp);
-            //emitRM("Return",ac,loc,gp,"return: store value");
-            //emitReturnInstruction(t1);
          }
 
          // HANDLE RETURN ADDRESS
@@ -346,6 +338,10 @@ static void genStmt( TreeNode * tree)
 
          if (TraceCode)  emitComment("<- Return") ;
          break; /* return_k */
+
+         //if (TraceCode)  emitReturn(gp);
+            //emitRM("Return",ac,loc,gp,"return: store value");
+            //emitReturnInstruction(t1);
 
          // emitRM("LDA", mp, 0, fp, "copy fp to mp");
          // emitRM("LD", fp, 0, mp, "pop fp");
@@ -408,7 +404,24 @@ static void genStmt( TreeNode * tree)
             }
             else
             {
-               // // DECRESCE mp para DAR ESPAÇO para colocar FUNCTION POINTER REGISTER
+               // // salva Old Frame Pointer na MEMORY
+               // emitRM("ST", fp, --memorySize, mp, "save old fp to mp");
+               // // atualiza o Frame Pointer
+               // emitRM("LDA", fp, memorySize, mp, "update fp with mp of old fp");
+               // acumula address de retorno
+               emitRM("LDA", ac, 1, PC, "accumulate address call");
+               
+               sprintf(comment, "jump to function at %d", loc);
+               if (TraceCode) emitComment(comment);
+               emitRM("LD", PC, loc, gp, comment);
+            }
+         }
+
+         sprintf(comment, "<- FCall %s", tree->child[0]->attr.data.name);
+         if(TraceCode) emitComment(comment);
+         break; /* call_k */
+
+         // // DECRESCE mp para DAR ESPAÇO para colocar FUNCTION POINTER REGISTER
                // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
                // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
                // emitRM("ST", fp, 0, mp, "push fp");
@@ -421,24 +434,6 @@ static void genStmt( TreeNode * tree)
                // emitRM("ST", ac1, 0, mp, "push return address");
                // emitRM("LDC", ac, 2, PC, "accumulate return address");
                // CALL FUNCTION at the correct global pointer address
-               
-               // if(!strcmp(tree->child[0]->attr.data.name, "main")) 
-               // {
-               // altera frame pointer
-
-               // acumula address de retorno
-               emitRM("LDA", ac, 1, PC, "accumulate return address");
-               // }         
-               
-               sprintf(comment, "jump to function at %d", loc);
-               if (TraceCode) emitComment(comment);
-               emitRM("LD", PC, loc, gp, comment);
-            }
-         }
-
-         sprintf(comment, "<- FCall %s", tree->child[0]->attr.data.name);
-         if(TraceCode) emitComment(comment);
-         break; /* call_k */
 
          //  HANDLE LOAD ARGS
          // // toda vez que puxa um argumento, so dar store do acumulador no gp respectivo
