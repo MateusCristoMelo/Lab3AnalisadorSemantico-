@@ -364,39 +364,47 @@ static void genStmt( TreeNode * tree)
             {
                count_args++;
                // Percorre o valor de Id e da LOAD no acumulador
-               cGen(p1);
-
-               sprintf(comment, "argument %d saved at %d", count_args, (loc+count_args));
-               
-               // pega o que esta no acumulador e passa para loc do argumento certo
-               emitRM("ST", ac, (loc+count_args), gp, comment); 
-               
+               switch (p1->nodekind) {
+                  case StmtK:
+                     genStmt(p1);
+                     break;
+                  case ExpK:
+                     genExp(p1);
+                     sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                     // pega o que esta no acumulador e passa para loc do argumento certo
+                     emitRM("ST", ac, (loc+count_args), gp, comment);
+                     break;
+                  default:
+                     break;
+               }
                p1 = p1->sibling;
             }
-
-            // // DECRESCE mp para DAR ESPAÇO para colocar FUNCTION POINTER REGISTER
-            emitRM("LDC", ac1, 1, 0, "ac1 = 1");
-            emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
-            emitRM("ST", fp, 0, mp, "push fp");
-            // // COLOCA fp NA MEMORIA
-            emitRM("LDA", fp, 0, mp, "copy sp to fp");
-            emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
-            // CALCULATE RETURN ADDRESS AND PUSH INTO THE STACK
-            emitRM("LDC", ac1, 2, 0, "ac1 = 2");
-            emitRO("ADD", ac1, ac1, PC, "calculate return address");
-            emitRM("ST", ac1, 0, mp, "push return address");
-            // CALL FUNCTION at the correct global pointer address
-            
-            sprintf(comment, "jump to function at %d", loc);
-            if (TraceCode) emitComment(comment);
-            emitRM("LD", PC, loc, gp, comment);
 
             if(!strcmp(tree->child[0]->attr.data.name, "output"))
             { 
                /* now output it */
                emitRO("OUT",ac,0,0,"write ac");
             }
-
+            else
+            {
+               // // DECRESCE mp para DAR ESPAÇO para colocar FUNCTION POINTER REGISTER
+               // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+               // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+               // emitRM("ST", fp, 0, mp, "push fp");
+               // // COLOCA fp NA MEMORIA
+               // emitRM("LDA", fp, 0, mp, "copy sp to fp");
+               // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+               // CALCULATE RETURN ADDRESS AND PUSH INTO THE STACK
+               // emitRM("LDC", ac1, 2, 0, "ac1 = 2");
+               // emitRO("ADD", ac1, ac1, PC, "calculate return address");
+               // emitRM("ST", ac1, 0, mp, "push return address");
+               emitRM("LDC", ac, 2, PC, "accumulate return address");
+               // CALL FUNCTION at the correct global pointer address
+               
+               sprintf(comment, "jump to function at %d", loc);
+               if (TraceCode) emitComment(comment);
+               emitRM("LD", PC, loc, gp, comment);
+            }
          }
 
          sprintf(comment, "<- FCall %s", tree->child[0]->attr.data.name);

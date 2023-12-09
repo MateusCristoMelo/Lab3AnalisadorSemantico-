@@ -208,7 +208,7 @@ void printSymTab()//tem q alterar
         pc("%-7s  ",l->id_type);
         pc("%-9s  ",l->data_type);
 
-        pc("%-8d  ",l->memloc);
+        // pc("%-8d  ",l->memloc);
         LineList t = l->lines;
         while (t != NULL)
         {
