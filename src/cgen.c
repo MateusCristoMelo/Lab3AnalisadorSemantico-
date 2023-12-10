@@ -20,25 +20,6 @@ static int tmpOffset = 0;
 static char * ScopeNow = "";
 static int memorySize = 0;
 
-#define ofpFO 0
-#define retFO -1
-#define initFO -2
-
-static int globalOffset = 0;
-static int localOffset = initFO;
-
-/* numOfParams is the number of parameters in current frame */
-static int numOfParams = 0;
-
-/* isInFunc is the flag that shows if current node
-   is in a function block. This flag is used when
-   calculating localOffset of a function declaration.
-*/
-static int isInFunc = FALSE;
-
-/* mainFuncLoc is the location of main() function */
-static int mainFuncLoc = 0;
-
 static int locFunction = 0;
 static char comment[128];
 
@@ -58,7 +39,7 @@ static void genStmt( TreeNode * tree)
          return;
    switch (tree->kind.stmt) {
 
-      case VarDecK://Ainda tem que verificar
+      case VarDecK:
          /* 
           *  Todo VarDecK é seguido de IdK
           *  Nao eh preciso fazer nada porque ja existe espaco no gp para TODA DECLARACAO
@@ -85,7 +66,7 @@ static void genStmt( TreeNode * tree)
          // emitRO("ADD", mp, mp, ac1, "free local variable");
          // genExp(tree->child[0]); //leva pro node idk
 
-      case FunDecK: //Ainda tem que verificar
+      case FunDecK:
          /* 
           *  FunDeck guarda IdK em child[0]
           *  Parameters em child[0]->child[0]
@@ -97,7 +78,10 @@ static void genStmt( TreeNode * tree)
          if(TraceCode) emitComment(comment);
 
          savedLoc1 = emitSkip(0);
-         ScopeNow = tree->child[0]->attr.data.name;
+         if(strcmp(tree->child[0]->attr.data.name, "input") && strcmp(tree->child[0]->attr.data.name, "output") )
+         {
+            ScopeNow = tree->child[0]->attr.data.name;
+         }
          emitBackup(locFunction);
 
          // confere se esta na main, caso positivo ent insere comando inicial de jump main
@@ -124,11 +108,29 @@ static void genStmt( TreeNode * tree)
          if(strcmp(tree->child[0]->attr.data.name, "main")) 
          {
             // salva Old Frame Pointer na MEMORY
-            emitRM("ST", fp, --memorySize, mp, "save old fp to mp");
+            emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+            emitRM("ST", fp, 0, mp, "save old fp to mp"); // emitRM("ST", fp, --memorySize, mp, "save old fp to mp");
             // atualiza o Frame Pointer
-            emitRM("LDA", fp, memorySize, mp, "update fp with mp of old fp");
+            emitRM("LDA", fp, 0, mp, "update fp with mp of old fp"); // emitRM("LDA", fp, memorySize, mp, "update fp with mp of old fp");
             // da um store do return address presente no acumulador
-            emitRM("ST", ac, --memorySize, mp, "store return address from ac");
+            emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+            emitRM("ST", ac, 0, mp, "store return address from ac"); // emitRM("ST", ac, --memorySize, mp, "store return address from ac");
+         }
+
+         // HANDLE PARAMETERS
+         // talvez seja uma boa contar os parametros para dar shift no espaço da memory
+         p1 = tree->child[0]->child[0];
+         int count_params = 0;
+         while( p1 != NULL )
+         {
+            if (TraceCode) emitComment("-> params") ;
+            count_params++;
+            emitRM("LD", ac1, (loc+count_params), gp, "get variable from global");
+            sprintf(comment, "variable %s pushed to stack", p1->child[0]->attr.data.name);
+            emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+            emitRM("ST", ac1, 0, mp, comment); // emitRM("ST", ac1, --memorySize, mp, comment);
+            p1 = p1->sibling;
+            if (TraceCode) emitComment("<- params") ;
          }
 
          // HANDLE STATEMENTS
@@ -196,7 +198,7 @@ static void genStmt( TreeNode * tree)
          //          cGen(p2);
          // if (TraceCode) emitComment("<- FunDec") ;
 
-      case IfK ://Bem Parecido com git - jack
+      case IfK ://Creio OK
          /* 
           *  savedLoc1: se o valor de p1 for zero (ele ta passando oq ta no acumulador), ou seja, FALSE, ent jump para ++savedLoc2
           *  (instrucoes do que acontece se p1 for 1, ou seja, TRUE)
@@ -211,7 +213,7 @@ static void genStmt( TreeNode * tree)
          p3 = tree->child[2] ;
 
          /* generate code for test expression */
-         cGen(p1); // calcula o que vai gerar daqui e armazena em algum lugar
+         genExp(p1); // calcula o que vai gerar daqui e armazena em algum lugar
          savedLoc1 = emitSkip(1); // pula uma instrução do assembly e salva uma antes do inicio do que acontece se IF for TRUE
          emitComment("if: jump to else belongs here");
          
@@ -254,7 +256,7 @@ static void genStmt( TreeNode * tree)
          // }
          //emitBranchInstruction("", l2, FALSE);
 
-      case WhileK://Bem Parecido com git - jack
+      case WhileK:// Creio que OK
          /*
           *  savedLoc1: n teve skip, ent essencialmente é a primeira instrução do cálculo de p1
           *  (calculo de p1)
@@ -276,7 +278,7 @@ static void genStmt( TreeNode * tree)
          /* generate code for body */
          if (TraceCode)  emitLabel(l1);
          if (TraceCode) emitComment("while : test expression start");
-         cGen(p1);
+         genExp(p1);
          if (TraceCode) emitComment("while : test expression end");
          /* generate code for test */
          //emitBranchInstruction("reg1", l2, FALSE);
@@ -291,7 +293,7 @@ static void genStmt( TreeNode * tree)
          
          // salto incondicional, professor fala para usar LDA, ent seria bom trocar...
          // aqui depois de executar p2, ele precisa recalcular p1 pra entender se houve alguma mudança na condicao, por isso ele volta para savedLoc1
-         emitRM_Abs("LDA", PC, savedLoc1, "unconditional jump");
+         emitRM("LDC", PC, savedLoc1, 0, "unconditional jump");
          // emitRM_Abs("LDA",PC,savedLoc1,"unconditional jump"); // uma ideia é usar alguma operacao para puxar o currentLoc, pega pelo skip(0)
 
          // Volta para savedLoc2 e assinala instrucao de branch
@@ -305,7 +307,7 @@ static void genStmt( TreeNode * tree)
          
          break; /* while_k */
 
-      case AssignK: // Bem Parecido com git - jack
+      case AssignK: // PROBLEMA É QUE PRECISA USAR fp
          /* 
           *  AssignK soh aparece na arvore no formato var ASSIGN expresao
           *  Ou seja, P1 é necessariamente um IdK, NAO PRECISA CHAMAR P1, é só armazenar na memória onde ele tá
@@ -316,14 +318,34 @@ static void genStmt( TreeNode * tree)
          p2 = tree->child[1] ;
          
          /* generate code for rhs */
-         genExp(p1);
-         emitRM("ST", ac, localOffset--, mp, "assign: push left (address)");
+         // genExp(p1);
          if (TraceCode) emitComment("-> generate code for rhs") ;
          cGen(p2);
          if (TraceCode) emitComment("<- generate code for rhs end") ;
-         emitRM("LD", ac1, ++localOffset, mp, "assign: load left (address)");
-
-         emitRM("ST", ac, 0, ac1, "assign: store value");
+         
+         int scope_loc = 0;
+         if(strcmp(ScopeNow, "") && strcmp(ScopeNow, "main"))
+         {
+            scope_loc = st_lookup(ScopeNow, "");
+            loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
+            int offset = -1+(scope_loc-loc);
+            emitRM("ST",ac,offset,fp,"assign stack: store value");
+         }
+         else
+         {
+            loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
+            if (loc == -1) {
+               loc = st_lookup(tree->child[0]->attr.data.name, "");
+            }
+            sprintf(comment, "Assign %s to loc %d in scope %s", tree->child[0]->attr.data.name, loc, ScopeNow);
+            if(TraceCode) emitComment(comment);
+            // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
+            // if(!strcmp(tree->attr.data.type, "array")){
+            //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
+            // }
+            emitRM("ST",ac,loc,gp,"assign: store value");
+         }
+         
          /* now store value */
          // loc = st_lookup(tree->attr.data.name, ScopeNow);
          // emitRM("ST",ac,loc,gp,"assign: store value");
@@ -332,16 +354,16 @@ static void genStmt( TreeNode * tree)
          //    loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
          //    // arranjar um jeito de puxar o id
          // }
-         /*/loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);*/
+         // loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
 
          // PROBLEMA AQUI É O OFFSET DA PILHA, NAO TA SENDO CONSIDERADO o caso de VAR PARAMETER
-         /*emitRM("ST",ac,loc,gp,"assign: store value");*/
+         // emitRM("ST",ac,loc,gp,"assign: store value");
 
          //emitAssignInstruction("", "reg1", "reg2", "");
          if (TraceCode)  emitComment("<- assign") ;
          break; /* assign_k */
 
-      case ReturnK : //Bem Parecido com git - jack
+      case ReturnK :
          /* 
           *  Somente pula de Node, pode ser IdK ou CallK, por isso cgen
           */
@@ -349,17 +371,15 @@ static void genStmt( TreeNode * tree)
          if (TraceCode)  emitComment("-> Return") ;
       
          p1 = tree->child[0];
-         //if (p1 != NULL) {
+         if (p1 != NULL) {
             // Da um load no ACUMULADOR ac que guarda qual eh o valor de retorno
             cGen(p1);
+         }
 
-         //}
-
-         emitRM("LD",PC,retFO,mp,"return: to caller");
          // HANDLE RETURN ADDRESS
-         //emitRM("LDA", ac1, 0, fp, "save current fp to ac1");
-         //emitRM("LD", fp, 0, fp, "adjust fp");
-         //emitRM("LD", PC, -1, ac1, "jump to return address");
+         emitRM("LDA", ac1, 0, fp, "save current fp to ac1");
+         emitRM("LD", fp, 0, fp, "adjust fp");
+         emitRM("LD", PC, -1, ac1, "jump to return address");
 
          if (TraceCode)  emitComment("<- Return") ;
          break; /* return_k */
@@ -378,7 +398,7 @@ static void genStmt( TreeNode * tree)
          // // Pulando de volta para o chamador
          // emitRM("LD", pc, 0, ac1, "return to caller");
 
-      case CallK: //Bem diferente do Git, nao verificada ainda
+      case CallK:
          /* 
           *  Todo CallK tem como child[0] o ID da funcao
           *  Tem como child[1] a lista de args
@@ -386,8 +406,6 @@ static void genStmt( TreeNode * tree)
           */
 
          sprintf(comment, "-> FCall %s", tree->child[0]->attr.data.name);
-
-         emitRM("LDA", ac1, 0, fp, "save current fp to ac1");
          if(TraceCode) emitComment(comment);
 
          p1 = tree->child[1];
@@ -531,7 +549,7 @@ static void genExp( TreeNode * tree)
       return;
    switch (tree->kind.exp) {
 
-      case ConstK ://Bem parecido com o do git - jack
+      case ConstK ://OK
          //emitLabelInt(tree->attr.val);
          if (TraceCode) emitComment("-> Const") ;
          // pc("\n\nCONST\n\n");
@@ -540,42 +558,53 @@ static void genExp( TreeNode * tree)
          if (TraceCode)  emitComment("<- Const") ;
          break; /* ConstK */
       
-      case IdK : //Ainda nao verificado
+      case IdK : //OK
          if (TraceCode) emitComment("-> Id") ;
          // PRECISA TER UM HANDLE DE PILHA DE PARAMETROS
-         loc = st_lookup(tree->attr.data.name, ScopeNow);
-         if(loc == -1) {
-            loc = st_lookup(tree->attr.data.name, "");
+         int scope_loc = 0;
+         if(strcmp(ScopeNow, "") && strcmp(ScopeNow, "main"))
+         {
+            scope_loc = st_lookup(ScopeNow, "");
+            loc = st_lookup(tree->attr.data.name, ScopeNow);
+            int offset = -1+(scope_loc-loc);
+            emitRM("LD",ac,offset,fp,"load id value of parameter stack");
          }
-         // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
-         // if(!strcmp(tree->attr.data.type, "array")){
-         //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
-         // }
-
-         // LOAD SÓ FUNCIONA PARA VARIÁVEL GLOBAL, PRECISA ALTERAR OFFSET
-         emitRM("LD",ac,loc,gp,"load id value");
+         else
+         {
+            loc = st_lookup(tree->attr.data.name, ScopeNow);
+            if(loc == -1) {
+               loc = st_lookup(tree->attr.data.name, "");
+            }
+            // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
+            // if(!strcmp(tree->attr.data.type, "array")){
+            //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
+            // }
+            emitRM("LD",ac,loc,gp,"load id value");
+         }
+         
          if (TraceCode)  emitComment("<- Id") ;
          break; /* IdK */
 
-      case OpK : //Ainda nao verificado
+      case OpK : //OK
             if (TraceCode) emitComment("-> Op") ;
             p1 = tree->child[0];
             p2 = tree->child[2];
 
             /* gen code for ac = left arg */
             if (TraceCode) emitComment("-> left") ;
-            cGen(p1);
+            genExp(p1);
             if (TraceCode) emitComment("<- left") ;
             /* gen code to push left operand */
-            tmpOffset--;
-            emitRM("ST",ac,(memorySize+tmpOffset),mp,"op: push left");
+            // tmpOffset--;
+            emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+            emitRM("ST",ac,0,mp,"op: push left"); // emitRM("ST",ac,--memorySize,mp,"op: push left");
             /* gen code for ac = right operand */
             if (TraceCode) emitComment("-> right") ;
             genExp(p2);
             if (TraceCode) emitComment("<- right") ;
             /* now load left operand */
-            emitRM("LD",ac1,(memorySize+tmpOffset),mp,"op: load left");
-            tmpOffset++;
+            emitRM("LD",ac1,0,mp,"op: load left"); // emitRM("LD",ac1,memorySize++,mp,"op: load left");
+            emitRM("LDA",mp,1,mp,"mp = mp + 1");
             switch (tree->attr.op) {        
                case PLUS :  
                   emitRO("ADD",ac,ac1,ac,"op +"); 
