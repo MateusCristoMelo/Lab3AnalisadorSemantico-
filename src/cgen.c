@@ -124,12 +124,24 @@ static void genStmt( TreeNode * tree)
          while( p1 != NULL )
          {
             if (TraceCode) emitComment("-> params") ;
+            
             count_params++;
-            emitRM("LD", ac1, (loc+count_params), gp, "get variable from global");
+            
+            // if(!strcmp(tree->child[0]->attr.data.type, "array"))
+            // {
+            //    emitRM("LD", ac1, (loc+count_params), gp, "get variable from global");
+            // }
+            // else
+            // {
+               emitRM("LD", ac1, (loc+count_params), gp, "get variable from global");
+            // }
+
             sprintf(comment, "variable %s pushed to stack", p1->child[0]->attr.data.name);
             emitRM("LDA",mp,-1,mp,"mp = mp - 1");
             emitRM("ST", ac1, 0, mp, comment); // emitRM("ST", ac1, --memorySize, mp, comment);
+            
             p1 = p1->sibling;
+            
             if (TraceCode) emitComment("<- params") ;
          }
 
@@ -329,7 +341,29 @@ static void genStmt( TreeNode * tree)
             scope_loc = st_lookup(ScopeNow, "");
             loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
             int offset = -1+(scope_loc-loc);
-            emitRM("ST",ac,offset,fp,"assign stack: store value");
+            
+            if(!strcmp(tree->child[0]->attr.data.type, "array"))
+            {
+               if (TraceCode) emitComment("-> Array");
+               
+               emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+               emitRM("ST",ac,0,mp,"assign: push result val"); 
+               
+               // abre expressao dentro do indice e puxa no acumulador
+               genExp(tree->child[0]->child[0]);
+               emitRM("LD",ac1,offset,fp,"load id value of parameter stack");
+               emitRO("ADD",ac,ac1,ac,"load id array value");
+
+               emitRM("LD",ac1,0,mp,"assign: load result val");
+               emitRM("LDA",mp,1,mp,"mp = mp + 1");
+
+               emitRM("ST",ac1,0,ac,"assign: store array value");
+               if (TraceCode) emitComment("<- Array");
+            }
+            else
+            {
+               emitRM("ST",ac,offset,fp,"assign stack: store value");
+            }
          }
          else
          {
@@ -337,15 +371,42 @@ static void genStmt( TreeNode * tree)
             if (loc == -1) {
                loc = st_lookup(tree->child[0]->attr.data.name, "");
             }
-            sprintf(comment, "Assign %s to loc %d in scope %s", tree->child[0]->attr.data.name, loc, ScopeNow);
-            if(TraceCode) emitComment(comment);
-            // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
-            // if(!strcmp(tree->attr.data.type, "array")){
-            //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
-            // }
-            emitRM("ST",ac,loc,gp,"assign: store value");
+            
+            if(!strcmp(tree->child[0]->attr.data.type, "array"))
+            {
+               if (TraceCode) emitComment("-> Array");
+               
+               emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+               emitRM("ST",ac,0,mp,"assign: push result val"); 
+               
+               // emitRM("LDA",ac1,0,ac,"save ac value");
+               // abre expressao dentro do indice e puxa no acumulador
+               genExp(tree->child[0]->child[0]);
+               emitRM("LDA",ac,loc,ac,"find id array address");
+               emitRO("ADD",ac,ac,gp,"load array address");
+
+               emitRM("LD",ac1,0,mp,"assign: load result val");
+               emitRM("LDA",mp,1,mp,"mp = mp + 1");
+
+               emitRM("ST",ac1,0,ac,"assign: store array value");
+               if (TraceCode) emitComment("<- Array");
+            }
+            else
+            {
+               sprintf(comment, "Assign %s to loc %d in scope %s", tree->child[0]->attr.data.name, loc, ScopeNow);
+               if(TraceCode) emitComment(comment);
+               emitRM("ST",ac,loc,gp,"assign: store value");
+            }
          }
          
+         if (TraceCode)  emitComment("<- assign") ;
+         break; /* assign_k */
+
+         // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
+         // if(!strcmp(tree->attr.data.type, "array")){
+         //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
+         // }
+
          /* now store value */
          // loc = st_lookup(tree->attr.data.name, ScopeNow);
          // emitRM("ST",ac,loc,gp,"assign: store value");
@@ -360,8 +421,6 @@ static void genStmt( TreeNode * tree)
          // emitRM("ST",ac,loc,gp,"assign: store value");
 
          //emitAssignInstruction("", "reg1", "reg2", "");
-         if (TraceCode)  emitComment("<- assign") ;
-         break; /* assign_k */
 
       case ReturnK :
          /* 
@@ -431,10 +490,53 @@ static void genStmt( TreeNode * tree)
                      genStmt(p1);
                      break;
                   case ExpK:
-                     genExp(p1);
-                     sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
-                     // pega o que esta no acumulador e passa para loc do argumento certo
-                     emitRM("ST", ac, (loc+count_args), gp, comment);
+                     // switch (p1->kind.exp) {
+                     //    case IdK:
+                     //       pc("\n\nid --------------\n\n");
+                     //       pc("\n\nname %s --------------\n\n", p1->attr.data.name);
+                     //       break;
+                     //    case OpK:
+                     //       pc("\n\nop --------------\n\n");
+                     //       break;
+                     //    case ConstK:
+                     //       pc("\n\nconst --------------\n\n");
+                     //       break;
+                     //    default:
+                     //       pc("\n\ndefaut --------------\n\n");
+                     //       break;
+                     // }
+                     // pc("\n\nname %s --------------\n\n", p1->attr.data.name);
+                     if(p1->kind.exp == IdK)
+                     {   
+                        if(!strcmp(type_lookup(p1->attr.data.name, ScopeNow), "array"))
+                        {
+                           int loc_array = st_lookup(p1->attr.data.name, ScopeNow);
+                           emitRM("LD",ac,loc_array,gp,"load array address value");
+                           sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                           emitRM("ST", ac, (loc+count_args), gp, comment);
+                        }
+                        else if(!strcmp(type_lookup(p1->attr.data.name, ""), "array"))
+                        {
+                           int loc_array = st_lookup(p1->attr.data.name, "");
+                           emitRM("LD",ac,loc_array,gp,"load array address value");
+                           sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                           emitRM("ST", ac, (loc+count_args), gp, comment);
+                        }
+                        else
+                        {
+                           genExp(p1);
+                           sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                           // pega o que esta no acumulador e passa para loc do argumento certo
+                           emitRM("ST", ac, (loc+count_args), gp, comment);
+                        }
+                     }
+                     else
+                     {
+                        genExp(p1);
+                        sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                        // pega o que esta no acumulador e passa para loc do argumento certo
+                        emitRM("ST", ac, (loc+count_args), gp, comment);
+                     }
                      break;
                   default:
                      break;
@@ -449,13 +551,8 @@ static void genStmt( TreeNode * tree)
             }
             else
             {
-               // // salva Old Frame Pointer na MEMORY
-               // emitRM("ST", fp, --memorySize, mp, "save old fp to mp");
-               // // atualiza o Frame Pointer
-               // emitRM("LDA", fp, memorySize, mp, "update fp with mp of old fp");
-               // acumula address de retorno
                emitRM("LDA", ac, 1, PC, "accumulate address call");
-               
+
                sprintf(comment, "jump to function at %d", loc);
                if (TraceCode) emitComment(comment);
                emitRM("LD", PC, loc, gp, comment);
@@ -467,18 +564,18 @@ static void genStmt( TreeNode * tree)
          break; /* call_k */
 
          // // DECRESCE mp para DAR ESPAÇO para colocar FUNCTION POINTER REGISTER
-               // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
-               // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
-               // emitRM("ST", fp, 0, mp, "push fp");
-               // // COLOCA fp NA MEMORIA
-               // emitRM("LDA", fp, 0, mp, "copy sp to fp");
-               // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
-               // CALCULATE RETURN ADDRESS AND PUSH INTO THE STACK
-               // emitRM("LDC", ac1, 2, 0, "ac1 = 2");
-               // emitRO("ADD", ac1, ac1, PC, "calculate return address");
-               // emitRM("ST", ac1, 0, mp, "push return address");
-               // emitRM("LDC", ac, 2, PC, "accumulate return address");
-               // CALL FUNCTION at the correct global pointer address
+         // emitRM("LDC", ac1, 1, 0, "ac1 = 1");
+         // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+         // emitRM("ST", fp, 0, mp, "push fp");
+         // // COLOCA fp NA MEMORIA
+         // emitRM("LDA", fp, 0, mp, "copy sp to fp");
+         // emitRO("SUB", mp, mp, ac1, "mp = mp - ac1");
+         // CALCULATE RETURN ADDRESS AND PUSH INTO THE STACK
+         // emitRM("LDC", ac1, 2, 0, "ac1 = 2");
+         // emitRO("ADD", ac1, ac1, PC, "calculate return address");
+         // emitRM("ST", ac1, 0, mp, "push return address");
+         // emitRM("LDC", ac, 2, PC, "accumulate return address");
+         // CALL FUNCTION at the correct global pointer address
 
          //  HANDLE LOAD ARGS
          // // toda vez que puxa um argumento, so dar store do acumulador no gp respectivo
@@ -560,123 +657,157 @@ static void genExp( TreeNode * tree)
       
       case IdK : //OK
          if (TraceCode) emitComment("-> Id") ;
-         // PRECISA TER UM HANDLE DE PILHA DE PARAMETROS
+         
          int scope_loc = 0;
+         
          if(strcmp(ScopeNow, "") && strcmp(ScopeNow, "main"))
          {
             scope_loc = st_lookup(ScopeNow, "");
             loc = st_lookup(tree->attr.data.name, ScopeNow);
             int offset = -1+(scope_loc-loc);
-            emitRM("LD",ac,offset,fp,"load id value of parameter stack");
+
+            if((!strcmp(tree->attr.data.type, "array")) && (tree->child[0] != NULL))
+            {
+               if (TraceCode) emitComment("-> Array");
+               // abre expressao dentro do indice e puxa no acumulador
+               // if(tree->child[0] != NULL)
+               // {
+                  genExp(tree->child[0]);
+                  emitRM("LD",ac1,offset,fp,"load id value of parameter stack");
+                  emitRO("ADD",ac,ac1,ac,"load id array value");
+
+                  emitRM("LD",ac,0,ac,"load id array value");
+               // }
+               if (TraceCode) emitComment("<- Array");
+            }
+            else
+            {
+               emitRM("LD",ac,offset,fp,"load id value of parameter stack");
+            }
          }
          else
          {
             loc = st_lookup(tree->attr.data.name, ScopeNow);
-            if(loc == -1) {
+            if(loc == -1)
+            {
                loc = st_lookup(tree->attr.data.name, "");
             }
             // pc("\n\nNome variavel %s LOCALIZADA no LOC %d\n\n", tree->attr.data.name, loc);
-            // if(!strcmp(tree->attr.data.type, "array")){
-            //    if (TraceCode)  emitAssignInstruction("IdK", "reg", "exp", "4");
-            // }
-            emitRM("LD",ac,loc,gp,"load id value");
+            if((!strcmp(tree->attr.data.type, "array")) && (tree->child[0] != NULL))
+            {
+               if (TraceCode) emitComment("-> Array");
+               // abre expressao dentro do indice e puxa no acumulador
+               // if(tree->child[0] != NULL)
+               // {
+                  genExp(tree->child[0]);
+                  emitRM("LDA",ac,loc,ac,"find id array address");
+                  emitRO("ADD",ac,ac,gp,"load array address");
+                  
+                  emitRM("LD",ac,0,ac,"load id array value");
+               // }
+               if (TraceCode) emitComment("<- Array");
+            }
+            else
+            {
+               emitRM("LD",ac,loc,gp,"load id value");
+            }
          }
          
          if (TraceCode)  emitComment("<- Id") ;
          break; /* IdK */
 
       case OpK : //OK
-            if (TraceCode) emitComment("-> Op") ;
-            p1 = tree->child[0];
-            p2 = tree->child[2];
+         if (TraceCode) emitComment("-> Op") ;
+         p1 = tree->child[0];
+         p2 = tree->child[2];
 
-            /* gen code for ac = left arg */
-            if (TraceCode) emitComment("-> left") ;
-            genExp(p1);
-            if (TraceCode) emitComment("<- left") ;
-            /* gen code to push left operand */
-            // tmpOffset--;
-            emitRM("LDA",mp,-1,mp,"mp = mp - 1");
-            emitRM("ST",ac,0,mp,"op: push left"); // emitRM("ST",ac,--memorySize,mp,"op: push left");
-            /* gen code for ac = right operand */
-            if (TraceCode) emitComment("-> right") ;
-            genExp(p2);
-            if (TraceCode) emitComment("<- right") ;
-            /* now load left operand */
-            emitRM("LD",ac1,0,mp,"op: load left"); // emitRM("LD",ac1,memorySize++,mp,"op: load left");
-            emitRM("LDA",mp,1,mp,"mp = mp + 1");
-            switch (tree->attr.op) {        
-               case PLUS :  
-                  emitRO("ADD",ac,ac1,ac,"op +"); 
-                  if (TraceCode)  emitAssignInstruction("+",  name1,name2,name3);
-                  break;
-               case MINUS : 
-                  emitRO("SUB",ac,ac1,ac,"op -"); 
-                  if (TraceCode)  emitAssignInstruction("-",  name1,name2,name3);
-                  break;
-               case TIMES : 
-                  emitRO("MUL",ac,ac1,ac,"op *"); 
-                  if (TraceCode)  emitAssignInstruction("*",  name1,name2,name3);
-                  break;
-               case OVER :  
-                  emitRO("DIV",ac,ac1,ac,"op /"); 
-                  if (TraceCode)  emitAssignInstruction("/",  name1,name2,name3);
-                  break;
-               case EQ : 
-                  emitRO("SUB",ac,ac1,ac,"op ==") ;
-                  emitRM("JEQ",ac,2,PC,"br if true");
-                  emitRM("LDC",ac,0,ac,"false case") ;
-                  emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-                  emitRM("LDC",ac,1,ac,"true case") ;
-                  if (TraceCode)  emitAssignInstruction("==",  name1,name2,name3);
-                  break;
-               case LT : 
-                  emitRO("SUB",ac,ac1,ac,"op <") ;
-                  emitRM("JLT",ac,2,PC,"br if true") ;
-                  emitRM("LDC",ac,0,ac,"false case") ;
-                  emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-                  emitRM("LDC",ac,1,ac,"true case") ;
-                  if (TraceCode)  emitAssignInstruction("<",  name1,name2,name3); 
-                  break;
-               case LE : 
-                  emitRO("SUB",ac,ac1,ac,"op <=") ;
-                  emitRM("JLE",ac,2,PC,"br if true") ;
-                  emitRM("LDC",ac,0,ac,"false case") ;
-                  emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-                  emitRM("LDC",ac,1,ac,"true case") ;
-                  if (TraceCode)  emitAssignInstruction("<=",  name1,name2,name3); 
-                  break;
-               case GT : 
-                  emitRO("SUB",ac,ac1,ac,"op >") ;
-                  emitRM("JGT",ac,2,PC,"br if true") ;
-                  emitRM("LDC",ac,0,ac,"false case") ;
-                  emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-                  emitRM("LDC",ac,1,ac,"true case") ;
-                  if (TraceCode)  emitAssignInstruction(">",  name1,name2,name3);
-                  break;
-               case GE : 
-                  emitRO("SUB",ac,ac1,ac,"op >") ;
-                  emitRM("JGE",ac,2,PC,"br if true") ;
-                  emitRM("LDC",ac,0,ac,"false case") ;
-                  emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-                  emitRM("LDC",ac,1,ac,"true case") ;
-                  if (TraceCode)  emitAssignInstruction(">=",  name1,name2,name3);
-                  break;
-               case NE : 
-                  emitRO("SUB",ac,ac1,ac,"op >") ;
-                  emitRM("JNE",ac,2,PC,"br if true") ;
-                  emitRM("LDC",ac,0,ac,"false case") ;
-                  emitRM("LDA",PC,1,PC,"unconditional jmp") ;
-                  emitRM("LDC",ac,1,ac,"true case") ;
-                  if (TraceCode)  emitAssignInstruction("!=",  name1,name2,name3); 
-                  break;
-               default:
-                  emitComment("BUG: Unknown operator");
-                  break;
-               
-            } /* case op */
-            if (TraceCode)  emitComment("<- Op") ;
-            break; /* OpK */
+         /* gen code for ac = left arg */
+         if (TraceCode) emitComment("-> left") ;
+         genExp(p1);
+         if (TraceCode) emitComment("<- left") ;
+         /* gen code to push left operand */
+         // tmpOffset--;
+         emitRM("LDA",mp,-1,mp,"mp = mp - 1");
+         emitRM("ST",ac,0,mp,"op: push left"); // emitRM("ST",ac,--memorySize,mp,"op: push left");
+         /* gen code for ac = right operand */
+         if (TraceCode) emitComment("-> right") ;
+         genExp(p2);
+         if (TraceCode) emitComment("<- right") ;
+         /* now load left operand */
+         emitRM("LD",ac1,0,mp,"op: load left"); // emitRM("LD",ac1,memorySize++,mp,"op: load left");
+         emitRM("LDA",mp,1,mp,"mp = mp + 1");
+         switch (tree->attr.op) {        
+            case PLUS :  
+               emitRO("ADD",ac,ac1,ac,"op +"); 
+               if (TraceCode)  emitAssignInstruction("+",  name1,name2,name3);
+               break;
+            case MINUS : 
+               emitRO("SUB",ac,ac1,ac,"op -"); 
+               if (TraceCode)  emitAssignInstruction("-",  name1,name2,name3);
+               break;
+            case TIMES : 
+               emitRO("MUL",ac,ac1,ac,"op *"); 
+               if (TraceCode)  emitAssignInstruction("*",  name1,name2,name3);
+               break;
+            case OVER :  
+               emitRO("DIV",ac,ac1,ac,"op /"); 
+               if (TraceCode)  emitAssignInstruction("/",  name1,name2,name3);
+               break;
+            case EQ : 
+               emitRO("SUB",ac,ac1,ac,"op ==") ;
+               emitRM("JEQ",ac,2,PC,"br if true");
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               if (TraceCode)  emitAssignInstruction("==",  name1,name2,name3);
+               break;
+            case LT : 
+               emitRO("SUB",ac,ac1,ac,"op <") ;
+               emitRM("JLT",ac,2,PC,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               if (TraceCode)  emitAssignInstruction("<",  name1,name2,name3); 
+               break;
+            case LE : 
+               emitRO("SUB",ac,ac1,ac,"op <=") ;
+               emitRM("JLE",ac,2,PC,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               if (TraceCode)  emitAssignInstruction("<=",  name1,name2,name3); 
+               break;
+            case GT : 
+               emitRO("SUB",ac,ac1,ac,"op >") ;
+               emitRM("JGT",ac,2,PC,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               if (TraceCode)  emitAssignInstruction(">",  name1,name2,name3);
+               break;
+            case GE : 
+               emitRO("SUB",ac,ac1,ac,"op >") ;
+               emitRM("JGE",ac,2,PC,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               if (TraceCode)  emitAssignInstruction(">=",  name1,name2,name3);
+               break;
+            case NE : 
+               emitRO("SUB",ac,ac1,ac,"op >") ;
+               emitRM("JNE",ac,2,PC,"br if true") ;
+               emitRM("LDC",ac,0,ac,"false case") ;
+               emitRM("LDA",PC,1,PC,"unconditional jmp") ;
+               emitRM("LDC",ac,1,ac,"true case") ;
+               if (TraceCode)  emitAssignInstruction("!=",  name1,name2,name3); 
+               break;
+            default:
+               emitComment("BUG: Unknown operator");
+               break;
+            
+         } /* case op */
+         if (TraceCode)  emitComment("<- Op") ;
+         break; /* OpK */
       default:
          break;
   }
@@ -708,10 +839,12 @@ static int getSizeOfGlobal(TreeNode * syntaxTree)
    TreeNode *tree = syntaxTree;
    while(tree != NULL)
    {
-      if(tree->kind.stmt == VarDecK && (!strcmp(tree->child[0]->attr.data.type, "array")))
-         result += tree->child[0]->child[0]->attr.val;
-      else
+      if(tree->kind.stmt == FunDecK)
          result++;
+      // if(tree->kind.stmt == VarDecK && (!strcmp(tree->child[0]->attr.data.type, "array")))
+      //    // result += tree->child[0]->child[0]->attr.val;
+      // else
+      //    result++;
       tree = tree->sibling;
    }
    return result;

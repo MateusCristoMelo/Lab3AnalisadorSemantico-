@@ -19,7 +19,7 @@ static int highEmitLoc = 0;
 
 void emitLabel( char * label) 
 {   
-    pc("\n*%10s:\n", label);
+    pc("*%10s:\n", label);
 } /* emitLabel */
 
 void emitHalt() 

@@ -108,13 +108,14 @@ static void insertNode(TreeNode * t) //alterar essa
                 t->child[0]->attr.data.name = NULL;
               }              
             }
-            // if(!strcmp(t->child[0]->attr.data.type, "array")) {
-            //   if(t->child[0]->child[0] != NULL) {
-            //     // pc("\n\nAAAAAAAAAAAAAAAA %d -> %s\n\n", t->child[0]->lineno, t->child[0]->attr.data.name);
-            //     location = location + t->child[0]->child[0]->attr.val;
-            //   }
-            // }
+            // IF DATA TYPE IS ARRAY, SAVE MORE SPACE IN THE MEMORY
             st_insert(t->child[0]->attr.data.name, t->child[0]->lineno, location++, Scope, t->child[0]->attr.data.type, Token2Char(t->attr.op));
+            if(!strcmp(t->child[0]->attr.data.type, "array")) {
+              if(t->child[0]->child[0] != NULL) {
+                // pc("\n\nAAAAAAAAAAAAAAAA %d -> %s\n\n", t->child[0]->lineno, t->child[0]->attr.data.name);
+                location = location + t->child[0]->child[0]->attr.val - 1;
+              }
+            }
             
           } else {            
             if (!id_lookup(t->child[0]->attr.data.name, Scope, "var")) {
