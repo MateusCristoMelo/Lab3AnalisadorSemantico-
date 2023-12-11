@@ -368,9 +368,9 @@ static void genStmt( TreeNode * tree)
          else
          {
             loc = st_lookup(tree->child[0]->attr.data.name, ScopeNow);
-            if (loc == -1) {
-               loc = st_lookup(tree->child[0]->attr.data.name, "");
-            }
+            // if (loc == -1) {
+            //    loc = st_lookup(tree->child[0]->attr.data.name, "");
+            // }
             
             if(!strcmp(tree->child[0]->attr.data.type, "array"))
             {
@@ -508,34 +508,79 @@ static void genStmt( TreeNode * tree)
                      // pc("\n\nname %s --------------\n\n", p1->attr.data.name);
                      if(p1->kind.exp == IdK)
                      {   
-                        if(!strcmp(type_lookup(p1->attr.data.name, ScopeNow), "array"))
+                        if(strcmp(ScopeNow, "") && strcmp(ScopeNow, "main"))
                         {
-                           int loc_array = st_lookup(p1->attr.data.name, ScopeNow);
-                           emitRM("LD",ac,loc_array,gp,"load array address value");
-                           sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
-                           emitRM("ST", ac, (loc+count_args), gp, comment);
-                        }
-                        else if(!strcmp(type_lookup(p1->attr.data.name, ""), "array"))
-                        {
-                           int loc_array = st_lookup(p1->attr.data.name, "");
-                           emitRM("LD",ac,loc_array,gp,"load array address value");
-                           sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
-                           emitRM("ST", ac, (loc+count_args), gp, comment);
+                           if(!id_lookup(p1->attr.data.name, ScopeNow, "array"))
+                           {
+                              if (TraceCode) emitComment("-> call array 1") ;
+                              int loc_array = st_lookup(p1->attr.data.name, ScopeNow);
+                              // emitRM("LDA",ac,loc_array,gp,"load array address value");
+                              emitRM("LD",ac,-1-count_args,fp,"load id value of parameter stack");
+                              sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                              emitRM("ST", ac, (loc+count_args), gp, comment);
+                              if (TraceCode) emitComment("<- call array 1") ;
+                           }
+                           else if(!id_lookup(p1->attr.data.name, "", "array"))
+                           {
+                              if (TraceCode) emitComment("-> call array 2") ;
+                              int loc_array = st_lookup(p1->attr.data.name, "");
+                              // emitRM("LDA",ac,loc_array,gp,"load array address value");
+                              emitRM("LD",ac,-1-count_args,fp,"load id value of parameter stack");
+                              sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                              emitRM("ST", ac, (loc+count_args), gp, comment);
+                              if (TraceCode) emitComment("<- call array 2") ;
+                           }
+                           else
+                           {
+                              if (TraceCode) emitComment("-> call array 3") ;
+                              // pc("\nvar %d\n",id_lookup(p1->attr.data.name, "", "array"));
+                              genExp(p1);
+                              sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                              // pega o que esta no acumulador e passa para loc do argumento certo
+                              emitRM("ST", ac, (loc+count_args), gp, comment);
+                              if (TraceCode) emitComment("-> call array 3") ;
+                           }
                         }
                         else
                         {
-                           genExp(p1);
-                           sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
-                           // pega o que esta no acumulador e passa para loc do argumento certo
-                           emitRM("ST", ac, (loc+count_args), gp, comment);
+                           if(!id_lookup(p1->attr.data.name, ScopeNow, "array"))
+                           {
+                              if (TraceCode) emitComment("-> call array 1") ;
+                              int loc_array = st_lookup(p1->attr.data.name, ScopeNow);
+                              emitRM("LDA",ac,loc_array,gp,"load array address value");
+                              sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                              emitRM("ST", ac, (loc+count_args), gp, comment);
+                              if (TraceCode) emitComment("<- call array 1") ;
+                           }
+                           else if(!id_lookup(p1->attr.data.name, "", "array"))
+                           {
+                              if (TraceCode) emitComment("-> call array 2") ;
+                              int loc_array = st_lookup(p1->attr.data.name, "");
+                              emitRM("LDA",ac,loc_array,gp,"load array address value");
+                              sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                              emitRM("ST", ac, (loc+count_args), gp, comment);
+                              if (TraceCode) emitComment("<- call array 2") ;
+                           }
+                           else
+                           {
+                              if (TraceCode) emitComment("-> call array 3") ;
+                              // pc("\nvar %d\n",id_lookup(p1->attr.data.name, "", "array"));
+                              genExp(p1);
+                              sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
+                              // pega o que esta no acumulador e passa para loc do argumento certo
+                              emitRM("ST", ac, (loc+count_args), gp, comment);
+                              if (TraceCode) emitComment("-> call array 3") ;
+                           }
                         }
                      }
                      else
                      {
+                        if (TraceCode) emitComment("-> call id") ;
                         genExp(p1);
                         sprintf(comment, "argument %d saved at gp dMem %d", count_args, (loc+count_args));
                         // pega o que esta no acumulador e passa para loc do argumento certo
                         emitRM("ST", ac, (loc+count_args), gp, comment);
+                        if (TraceCode) emitComment("-> call id") ;
                      }
                      break;
                   default:
